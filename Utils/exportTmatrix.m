@@ -1,4 +1,4 @@
-function [T] = exportTmatrix( stT, complete, out, format )
+function [T] = exportTmatrix( stT, complete, filename, format )
 %% exportTmatrix
 % Reshaping to long format and exporting T-matrix entries to a text file
 %
@@ -28,7 +28,7 @@ if(nargin < 2)
     complete = true;
 end
 if(nargin < 3)
-    out = [];
+    filename = [];
 end
 if(nargin < 4)
 %     format = '%d %d %d %d %d %d % d % d %.15g %.15g\n';
@@ -123,16 +123,16 @@ vecp = p_index(T(:,3), T(:,5)); % n, m -> p
 
 
 % write to a file
-if(~isempty(out))
-    if strcmp(out, 'stdout')
+if(~isempty(filename))
+    if strcmp(filename, 'stdout')
         fileID = 1;
     else
-        fileID = fopen(out, 'w');
+        fileID = fopen(filename, 'w');
     end
     fprintf(fileID, '%d elements of T-matrix\n', size(T, 1));
     fprintf(fileID, 's sp n np m mp Tr Ti \n');
     fprintf(fileID, format, T.');
-    if ~strcmp(out, 'stdout')
+    if ~strcmp(filename, 'stdout')
         fclose(fileID);
     end
 end

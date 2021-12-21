@@ -85,6 +85,9 @@ fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N, toc);
 
 %% Reshape the T-matrix to long format, and export to text file
 T = exportTmatrix(CstTRa, 'Tmatrix.txt');
+% TODO: This doesn't actually export to text file because of bad argument
+% handling - the string is based to the complete argument, not the out
+% argument
 
 %% Display orientation-averaged results
 fprintf('Results for a=%g, c=%g, k1=%g, s=%g+%gi, N=%d, Nt=%d\n',...

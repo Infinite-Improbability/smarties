@@ -1,4 +1,4 @@
-function [Q] = exportQmatrix(stQ, varargin)
+function [Q] = exportQmatrix(stQ, complete, invert, filename, format)
 %% exportQmatrix
 % Reshaping to long format and exporting Q-matrix entries to a text file
 %
@@ -11,7 +11,7 @@ function [Q] = exportQmatrix(stQ, varargin)
 %
 % RETURNS: Q-matrix elements and indices consolidated in a single matrix
 % The output format consists of 8 columns:
-% s sp m mp n np Qr Qi
+% s sp n np m mp Qr Qi
 % whereby
 % * m  1st m-index
 % * mp 2nd m-index (identical, due to rotational symmetry)
@@ -24,6 +24,17 @@ function [Q] = exportQmatrix(stQ, varargin)
 %
 % Dependency:
 % combine_oeeo
+
+%% Parse input parameters
+% TODO: Decide between positional or keyword args
+
+arguments
+    stQ cell
+    complete logical = false % For T matrix this defaults to true
+    invert logical = false
+    filename string = []
+    format string = '%d %d %d %d % d % d %.15g %.15g\n'
+end
 
 %% Conversion Method
 % The input stQ structure is a cell array where each cell is associated
@@ -48,24 +59,6 @@ function [Q] = exportQmatrix(stQ, varargin)
 % Once we have iterated over all m, we stack the matrices and sort the
 % rows.
 
-%% Parse input parameters
-% Using nargin is less resilient
-parser = inputParser;
-addRequired(parser, 'stQ', @isstruct);
-addOptional(parser, 'complete', true, @islogical);
-addOptional(parser, 'invert', false, @islogical);
-addParameter(parser, 'out', [], @isstring);
-addParameter(parser, 'format', '%d %d %d %d % d % d %.15g %.15g\n', @isstring);
-parse(parser, width, varargin{:})
-
-stQ = parser.Results.stQ;
-complete = parser.Results.complete;
-invert = parser.Results.invert;
-out = parser.Results.out;
-format = parser.Results.format;
-
-
-
 %% Extract Q-matrix values for each m and list with corresponding indices
 % Loop over positive m-values (following storage as independent cells)
 mMax = length(stQ);
@@ -77,7 +70,7 @@ for i = 1:mMax
     % 0.
     
     % Get all values for the current m
-    [M, n_vec] = combine_oeeo(stQ{i});
+    [M, n_vec] = combine_oeeo(stQ{i}, 'st4MQ');
     
     % Create array of indices
     [n,s, np,sp] = ndgrid(n_vec,1:2, n_vec,1:2);
@@ -108,20 +101,23 @@ end
 
 %% Combine all values for positive m's
 % We now have an array of the form
-% vec_s vec_sp vec_m vec_mp vec_n vec_np q_real q_imag
+% [vec_s vec_sp vec_n vec_np vec_m vec_mp q_real q_imag]
 Q = cell2mat(tmp.');
 
 %% Strip remaining analytic zeroes for m=0
 % 1. check components of Q for nonzero values
 % 2. if both components are nonzero keep it
-% TODO: Shouldn't we keep it if either component is zero?
+% TODO: Shouldn't we keep it if *either* component is zero?
 ids = all(Q(:,[7 8]), 2); % ids = all(Q(:,[7 8]) ~= 0, 2) seems to have a redundant comparison
 Q = Q(ids,:);
 
 %% Add values for negative m's if requested
 % TODO: Verify symmetry rules hold for Q matrix
-if complete
+% Warning in place until then
 
+if complete
+    warning('Export of negative m values relies on an unconfirmed symmetry relationship.')
+    
     ids = Q(:,5) ~= 0; % don't duplicate m=0 cases
     
     vec_m = -Q(ids,5);
@@ -143,5 +139,43 @@ if complete
 
 end
     
+%% Reorder rows by increasing s sp n np m mp (slow to fast)
+% i.e. start with Q11 block
+% start with n=1, np=1
+% vary m=mp=0:n
+% then n=1, np=2, ...
+% Note: careful with sortrows when Q contains complex numbers,
+% it doesn't treat negative m's like we'd want...
+% so now taking real part and imag separately...
+
+% Q = sortrows(Q, [6 5 4 3 2 1]);
+
+Q = sortrows(Q, 1:6);
+% [s sp n np m mp Qr Qi]
+% [vecs vecsp vecn vecnp vecm vecmp vectr vecti];
+
+% write to a file
+if(~isempty(filename))
+    if strcmp(filename, 'stdout')
+        fileID = 1;
+    else
+        fileID = fopen(filename, 'w');
+    end
+    fprintf(fileID, '%d elements of Q-matrix\n', size(Q, 1));
+    fprintf(fileID, '* s  1st block index (electric/magnetic)');
+    fprintf(fileID, '* sp 2nd block index (electric/magnetic)');
+    fprintf(fileID, '* n  1st n-index');
+    fprintf(fileID, '* np 2nd n-index');
+    fprintf(fileID, '* m  1st m-index');
+    fprintf(fileID, '* mp 2nd m-index');
+    fprintf(fileID, '* Qr real (Q_s,sp,m,mp,n,np)');
+    fprintf(fileID, '* Qi imag (Q_ssp,m,mp,n,np)');
+    fprintf(fileID, format, Q.');
+    fprintf(fileID, 's sp n np m mp Qr Qi \n');
+
+    if ~strcmp(filename, 'stdout')
+        fclose(fileID);
+    end
+end
 
 end
