@@ -72,6 +72,14 @@ for i = 1:mMax
     % Get all values for the current m
     [M, n_vec] = combine_oeeo(stQ{i}, 'st4MQ');
     
+    if invert
+        M(isnan(M)) = 0;
+        M = sparse(M); % much faster to invert
+        M = inv(M);
+        % TODO: Improve. Inverse changes somewhat depending on sparseness.
+        % Also inverse is slow, particularly if not sparse.
+    end
+    
     % Create array of indices
     [n,s, np,sp] = ndgrid(n_vec,1:2, n_vec,1:2);
     
@@ -107,7 +115,7 @@ Q = cell2mat(tmp.');
 %% Strip remaining analytic zeroes for m=0
 % 1. check components of Q for nonzero values
 % 2. if both components are nonzero keep it
-% TODO: Shouldn't we keep it if *either* component is zero?
+% TODO: Shouldn't we keep it if *either* component is nonzero?
 ids = all(Q(:,[7 8]), 2); % ids = all(Q(:,[7 8]) ~= 0, 2) seems to have a redundant comparison
 Q = Q(ids,:);
 
@@ -116,7 +124,7 @@ Q = Q(ids,:);
 % Warning in place until then
 
 if complete
-    warning('Export of negative m values relies on an unconfirmed symmetry relationship.')
+    warning('Export of negative m values relies on an unconfirmed symmetry relationship.');
     
     ids = Q(:,5) ~= 0; % don't duplicate m=0 cases
     
@@ -161,7 +169,12 @@ if(~isempty(filename))
     else
         fileID = fopen(filename, 'w');
     end
-    fprintf(fileID, '%d elements of Q-matrix\n', size(Q, 1));
+    
+    if inverse
+        fprintf(fileID, '%d elements of Q^(-1)-matrix\n', size(Q, 1));
+    else
+        fprintf(fileID, '%d elements of Q-matrix\n', size(Q, 1));
+    end
     fprintf(fileID, '* s  1st block index (electric/magnetic)');
     fprintf(fileID, '* sp 2nd block index (electric/magnetic)');
     fprintf(fileID, '* n  1st n-index');
