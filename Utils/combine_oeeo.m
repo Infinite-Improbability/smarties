@@ -1,6 +1,8 @@
 function [M, nvec] = combine_oeeo(stMa, fieldname)
-    %% modified from rvhGetFullMatrix to have NaNs
+    %% Combine oe and eo matrices
     % Returns full matrix from a struct stored in block-rvh form
+    % modified from rvhGetFullMatrix to have NaNs
+    % 
     %
     % Input:
     %           - st4Ma: struct of matrix in block-rvh form

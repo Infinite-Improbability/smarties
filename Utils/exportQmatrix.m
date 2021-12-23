@@ -69,16 +69,26 @@ for i = 1:mMax
     % the plus one is because cells are indexed from 1, while m starts from
     % 0.
     
+    if invert
+        % TODO: Verify this produces the correct Q^-1 matrix
+        suffixes = {'eo', 'oe'};
+       
+        for j = 1:2
+            idStr = ['st4MQ', suffixes{j}];
+            [stQ{i}.([idStr]).M11,...
+                stQ{i}.([idStr]).M12,...
+                stQ{i}.([idStr]).M21,...
+                stQ{i}.([idStr]).M22...
+            ] = blockInvert(stQ{i}.([idStr]).M11,...
+                stQ{i}.([idStr]).M12,...
+                stQ{i}.([idStr]).M21,...
+                stQ{i}.([idStr]).M22);
+        end
+       
+    end
+    
     % Get all values for the current m
     [M, n_vec] = combine_oeeo(stQ{i}, 'st4MQ');
-    
-    if invert
-        M(isnan(M)) = 0;
-        M = sparse(M); % much faster to invert
-        M = inv(M);
-        % TODO: Improve. Inverse changes somewhat depending on sparseness.
-        % Also inverse is slow, particularly if not sparse.
-    end
     
     % Create array of indices
     [n,s, np,sp] = ndgrid(n_vec,1:2, n_vec,1:2);
@@ -191,4 +201,24 @@ if(~isempty(filename))
     end
 end
 
+end
+
+function [E, F, G, H] = blockInvert(A, B, C, D)
+    %% Invert 2x2 block matrix
+    % input matrix given as blocks arranged as so
+    %  A | B   inversion     E | F
+    % ---+--- ----------->  ---+---
+    %  C | D                 G | H
+    %
+    % Dependency:
+    % invertLUcol
+    
+    % TODO: Cache or memoize repeated operations?
+    
+    Ai = invertLUcol(A); % we assume A is nonsingular
+    
+    H = invertLUcol(D - C*Ai*B); % inverted Schur complement
+    E = Ai + Ai * B * H * C * Ai;
+    F = - Ai * B * H;
+    G = - H * C * Ai;
 end
