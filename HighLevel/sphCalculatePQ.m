@@ -1,4 +1,4 @@
-function CstPQa = sphCalculatePQ(nNmax, absmvec, stRtfunc, stParams, NB)
+function CstPQa = sphCalculatePQ(nNmax, absmvec, stRtfunc, stParams, NB, coated)
   %% sphCalculatePQ
 % Calculates P,Q matrices for a spheroid using the algorithm of [JQSRT 123, 153 (2013)]
 % 
@@ -28,6 +28,7 @@ function CstPQa = sphCalculatePQ(nNmax, absmvec, stRtfunc, stParams, NB)
 %       NB:         (optional - default is nNmax)
 %                   The number of multipoles that should be used to
 %                   calculate the Bessel function products (NB >= N)
+%       coated:     logical. Replace bessel with hankel funcs
 %
 % Output:
 %	This returns a cell {1 x M} with one structure for each m, each containing
@@ -92,7 +93,7 @@ AnAk = Anvec.' * Anvec; % Matrix product gives [N x N] matrix
 % The hard part is to get the modified (non-problematic) radial functions
 % Note that these do not depend on m
 % The following function uses the algorithm of [JQSRT 2013] to achieve this
-[stXipsiAll, stPsipsiAll]=sphGetModifiedBesselProducts(nNmax, s, x, NB);
+[stXipsiAll, stPsipsiAll]=sphGetModifiedBesselProducts(nNmax, s, x, NB, coated);
 % These are [N x K=N x T] arrays
 
 % We will use them as [N x T x K] for a given k, so we can speed up

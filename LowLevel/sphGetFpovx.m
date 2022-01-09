@@ -1,6 +1,6 @@
-function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x)
+function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x, coated)
   %% sphGetFpovx
-% Calculate F^+/x (see Eq. 46 of JQSRT 2013)
+% Calculate F^+/x (see Eq. 46 of JQSRT 123 (2013) 153-168)
 % 
 % sphGetFpovx(nNmax, s, x) calculates the matrix F^+/x where
 %	Fpovx = P^+(x chi_n(x) psi_k(sx))/x for 0<=(n,k)<=nNmax, for one s (wavelength),
@@ -16,6 +16,7 @@ function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x)
 %        nNmax: [1 x 1] The maximum value of n that is desired.
 %        s:     [1 x 1] The relative refractive index of the particle
 %        x:     [T x 1] The values of x at which the function is evaluated
+%        coated: logical
 %
 % Output:
 %        Fpovx: [N+1 x N+1 x T] The matrix F^+/x
@@ -29,6 +30,15 @@ numX = length(x);
 
 rbpsi=vshRBpsi(0:(nNmax), s.*x); % [T x K+1]
 rbchi=vshRBchi(0:(nNmax), x); % [T x N+1]
+
+if coated
+    % TODO: This is an ugly solution as it sets things to have
+    % meanings other than their names suggest. Improve?
+    % We replace psi(sx) with xi(sx)=psi(sx)+i*chi(sx)
+    % See JQSRT 92 (2005) 373-381
+    rbchisx =vshRBchi(0:(nNmax), s.*x); % [T x K+1]
+    rbpsi = rbpsi + 1i*rbchisx;
+end
 
 Fpovx = zeros(nNmax + 1, nNmax+1, numX); % [N+1 x K+1 x T]
 % for xind=1:numX
