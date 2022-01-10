@@ -47,6 +47,10 @@ if nargin < 5 || NB < nNmax
     NB = nNmax;
 end
 
+if nargin < 6
+    coated = false;
+end
+
 % ignore divide-by-zero warnings in Octave
 if isOctave()
     currentWarning = warning('off','Octave:divide-by-zero');

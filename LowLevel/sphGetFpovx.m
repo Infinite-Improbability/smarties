@@ -16,7 +16,8 @@ function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x, coated)
 %        nNmax: [1 x 1] The maximum value of n that is desired.
 %        s:     [1 x 1] The relative refractive index of the particle
 %        x:     [T x 1] The values of x at which the function is evaluated
-%        coated: logical
+%        coated: logical. Optional. If true replace bessel funcs with
+%        hankel
 %
 % Output:
 %        Fpovx: [N+1 x N+1 x T] The matrix F^+/x
@@ -26,6 +27,10 @@ function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x, coated)
 % Dependency: 
 % sphGetFpRow, vshRBchi, vshRBpsi
 
+if nargin < 4
+    coated = false;
+end
+
 numX = length(x);
 
 rbpsi=vshRBpsi(0:(nNmax), s.*x); % [T x K+1]
@@ -33,7 +38,8 @@ rbchi=vshRBchi(0:(nNmax), x); % [T x N+1]
 
 if coated
     % TODO: This is an ugly solution as it sets things to have
-    % meanings other than their names suggest. Improve?
+    % meanings other than their names suggest. Improve? Oh, it probably
+    % also causes problems with calculation of Hankel in parent functions.
     % We replace psi(sx) with xi(sx)=psi(sx)+i*chi(sx)
     % See JQSRT 92 (2005) 373-381
     rbchisx =vshRBchi(0:(nNmax), s.*x); % [T x K+1]

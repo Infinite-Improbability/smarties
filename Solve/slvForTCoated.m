@@ -35,7 +35,7 @@ function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
 
 % Sanity check
 if stParamsCore.k ~= stParamsCoat.k * stParamsCoat.s
-    warning("stParamsCore.k does not equal stParamsCoat.k * stParamsCoat.s")
+    warning("slvForTCoated: stParamsCore.k does not equal stParamsCoat.k * stParamsCoat.s")
 end
 
 % Get T1 (T-matrix for core in medium matching coating)
@@ -55,6 +55,7 @@ end
 function CstPQa = getPQ(stParams, coated)
 %% getPQ
 % TODO: A lot of this is duplicated from slvForT. Can it be cleaned up?
+% Also this func needs proper documentation
 
 stk1s.k1 = stParams.k1;
 stk1s.s = stParams.s;
@@ -82,4 +83,42 @@ end
 NQ = N+Delta;% NQ>=N: Maximum multipole order for computing P and Q matrices
 
 CstPQa =  sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB, coated);
+end
+
+function cellMat = cstMultiply(A, B, typeA, typeB)
+%% cstMultiply
+% Multiplies two of the matrixes stored in smarties cell structure, as used
+% in the variables named Cst__.
+% type: type of matrix used, e.g. P or Q
+
+if size(A) ~= size(B)
+    warning('slvForTCoated: Attempting to multiply mismatched cells.')
+end
+
+cellMat = cellfun(cellMultiply, A, B, typeA, typeB);
+
+
+end
+
+function cellProd = cellMultiply(cellA, cellB, typeA, typeB)
+%% cellMultiply
+% Multiples two cells of the Cst__ matrices
+
+typeStr = append('st4M', typeA);
+if any(strcmp(cellA.CsMatList, typeStr))
+    cellA.type = typeStr;
+else
+    warning('slvForTCoated: cellA missing matching type of matrix')
+end
+matricesA = 
+
+typeStr = append('st4M', typeB);
+if any(strcmp(cellB.CsMatList, typeStr))
+    cellB.type = typeStr;
+else
+    warning('slvForTCoated: cellB missing matching type of matrix')
+end
+
+
+
 end
