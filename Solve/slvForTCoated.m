@@ -13,7 +13,8 @@ function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
 %                    the coating is nM for the core.
 %              - s: relative refractive index of particle (s=n_Particle / nM)
 %              TODO: Modify so user doesn't have to calculate s for core?
-%              - N: number of multipoles for T-matrix
+%              - N: number of multipoles for T-matrix. Should probably
+%              match for in and out?
 %              - nNbTheta: number of thetas for quadratures
 %       - stOptions: struct with optional parameters, see
 %              slvGetOptionsFromStruct for details.
@@ -34,28 +35,86 @@ function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
 % TODO: Adjust N estimation for coated spheroids
 
 % Sanity check
-if stParamsCore.k ~= stParamsCoat.k * stParamsCoat.s
+if stParamsCore.k1 ~= stParamsCoat.k1 * stParamsCoat.s
     warning("slvForTCoated: stParamsCore.k does not equal stParamsCoat.k * stParamsCoat.s")
 end
 
-% Get T1 (T-matrix for core in medium matching coating)
-[stCoaCore, CstTRaCore] = slvForT(stParamsCore, stOptions, stGeometry);
+% Expand some options we'll need later
+% TODO: Figure out core or coat here
+[bGetR,Delta,~,absmvec,bGetSymmetricT, ~] = slvGetOptionsFromStruct(stParamsCoat,stOptions);
+N = stParamsCoat.N;
+k1 = stParamsCoat.k1;
 
-% Get P2, Q2
-PQ = getPQ(stParamsCoat, false);
+%% Get T1 (T-matrix for core in medium matching coating)
+[~, TRCore] = slvForT(stParamsCore, stOptions);
 
-% Get PP2, QQ2 by using hankel functions in place of bessel functions
-PPQQ = getPQ(stParamsCoat, true);
+%% Get P2, Q2
+PQ = getPQ(stParamsCoat, stOptions, false);
 
-% Combine to get T-matrix for coated particle
+%% Get PP2, QQ2 by using hankel functions in place of bessel functions
+PPQQ = getPQ(stParamsCoat, stOptions, true);
+
+%% Combine to get T-matrix for coated particle
+% We'll get a variable with the right structure we can overwrite.
+PQCombined = PQ;
+
+% Then find the combined matrix for each m
+for m = 1:length(absmvec)
+    suffixes = ["eo" "oe"];
+    for sufIndex = 1:2
+        suffix = char(suffixes(sufIndex));
+        T = TRCore{m}.(['st4MT', suffix]);
+        P = PQ{m}.(['st4MP', suffix]);
+        Q = PQ{m}.(['st4MQ', suffix]);
+        PP = PPQQ{m}.(['st4MP', suffix]);
+        QQ = PPQQ{m}.(['st4MQ', suffix]);
+        
+        [P11, P12, P21, P22] = combineMatrixStructures(P, PP, T);
+        [Q11, Q12, Q21, Q22] = combineMatrixStructures(Q, QQ, T);
+        
+        PQCombined{m}.(['st4MP', suffix]).M11 = P11;
+        PQCombined{m}.(['st4MP', suffix]).M12 = P12;
+        PQCombined{m}.(['st4MP', suffix]).M21 = P21;
+        PQCombined{m}.(['st4MP', suffix]).M22 = P22;
+        
+        PQCombined{m}.(['st4MQ', suffix]).M11 = Q11;
+        PQCombined{m}.(['st4MQ', suffix]).M12 = Q12;
+        PQCombined{m}.(['st4MQ', suffix]).M21 = Q21;
+        PQCombined{m}.(['st4MQ', suffix]).M22 = Q22;
+    end
+end
+
+% Get T (and possibly R)
+CstTRa = rvhGetTRfromPQ(PQCombined,bGetR);
+
+% If needed, discard higher order multipoles
+% (which are affected by the finite size of P and Q)
+% N+Delta>=N: Maximum multipole order for computing P and Q matrices
+if (N+Delta)>N
+    CstTRa = rvhTruncateMatrices(CstTRa, N);
+ end
+% T and R matrices now go up to N multipoles
+
+% If required, symmetrize the T-matrix
+if bGetSymmetricT
+    CstTRa = rvhGetSymmetricMat(CstTRa, {'st4MT'});
+end
+
+% Calculate the (Ext, Abs, Sca) cross-sections for orientation-averaged excitation
+stCoa = rvhGetAverageCrossSections(k1, CstTRa);
 
 
 end
 
-function CstPQa = getPQ(stParams, coated)
+
+
+function CstPQa = getPQ(stParams, stOptions, coated)
 %% getPQ
 % TODO: A lot of this is duplicated from slvForT. Can it be cleaned up?
 % Also this func needs proper documentation
+
+a = stParams.a;
+c = stParams.c;
 
 stk1s.k1 = stParams.k1;
 stk1s.s = stParams.s;
@@ -85,40 +144,32 @@ NQ = N+Delta;% NQ>=N: Maximum multipole order for computing P and Q matrices
 CstPQa =  sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB, coated);
 end
 
-function cellMat = cstMultiply(A, B, typeA, typeB)
-%% cstMultiply
-% Multiplies two of the matrixes stored in smarties cell structure, as used
-% in the variables named Cst__.
-% type: type of matrix used, e.g. P or Q
 
-if size(A) ~= size(B)
-    warning('slvForTCoated: Attempting to multiply mismatched cells.')
-end
-
-cellMat = cellfun(cellMultiply, A, B, typeA, typeB);
-
-
-end
-
-function cellProd = cellMultiply(cellA, cellB, typeA, typeB)
-%% cellMultiply
-% Multiples two cells of the Cst__ matrices
-
-typeStr = append('st4M', typeA);
-if any(strcmp(cellA.CsMatList, typeStr))
-    cellA.type = typeStr;
-else
-    warning('slvForTCoated: cellA missing matching type of matrix')
-end
-matricesA = 
-
-typeStr = append('st4M', typeB);
-if any(strcmp(cellB.CsMatList, typeStr))
-    cellB.type = typeStr;
-else
-    warning('slvForTCoated: cellB missing matching type of matrix')
-end
-
-
-
+function [D11, D12, D21, D22] = combineMatrixStructures(A,B,C)
+    %% combineMatrixStructures(A,B)
+    % Combines two matrices A and B partitioned into four equal sized
+    % blocks (M_row,column) to produce
+    % D = A + B * C
+    % with the same structure
+    
+    A11 = A.M11;
+    A12 = A.M12;
+    A21 = A.M21;
+    A22 = A.M22;
+    
+    B11 = B.M11;
+    B12 = B.M12;
+    B21 = B.M21;
+    B22 = B.M22;
+    
+    C11 = C.M11;
+    C12 = C.M12;
+    C21 = C.M21;
+    C22 = C.M22;
+    
+    D11 = A11 + (B11*C11 + B12*C21);
+    D12 = A12 + (B11*C12 + B12*C22);
+    D21 = A21 + (B21*C11 + B22*C21);
+    D22 = A22 + (B21*C12 + B22*C22);
+    
 end
