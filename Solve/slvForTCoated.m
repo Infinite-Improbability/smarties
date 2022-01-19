@@ -27,10 +27,10 @@ function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
 %       - CstTRa: cell {1 x M} of structs defining the T (and possibly R)
 %                matrices
 %
-% Dependency: 
-% rvhGetAverageCrossSections, rvhGetSymmetricMat, rvhGetTRfromPQ,
-% rvhTruncateMatrices, slvGetOptionsFromStruct, sphCalculatePQ,
-% sphEstimateDelta, sphEstimateNB, sphMakeGeometry
+% Dependency:
+% slvGetOptionsFromStruct, slvForT
+% rvhGetTRfromPQ, rvhTruncateMatrices, rvhGetSymmetricMat,
+% rvhGetAverageCrossSections
 
 % TODO: Adjust N estimation for coated spheroids
 
@@ -40,9 +40,8 @@ if stParamsCore.k1 ~= stParamsCoat.k1 * stParamsCoat.s
 end
 
 % Expand some options we'll need later
-% TODO: Figure out core or coat here
 [bGetR,Delta,~,absmvec,bGetSymmetricT, ~] = slvGetOptionsFromStruct(stParamsCoat,stOptions);
-N = stParamsCoat.N;
+N = min(stParamsCoat.N, stParamsCore.N);
 k1 = stParamsCoat.k1;
 
 %% Get T1 (T-matrix for core in medium matching coating)
@@ -108,10 +107,27 @@ end
 
 
 
-function CstPQa = getPQ(stParams, stOptions, coated)
+function CstPQa = getPQ(stParams, stOptions, hankel, stGeometry)
 %% getPQ
-% TODO: A lot of this is duplicated from slvForT. Can it be cleaned up?
-% Also this func needs proper documentation
+% Wrapper around sphCalculatePQ that prepares some variables. Based on
+% slvforT.
+%
+% Input:
+%       - stParams: struct with parameters describing scenario
+%               See slvForT for details.
+%       - stOptions: struct with optional parameters, see
+%               slvGetOptionsFromStruct for details.
+%       - hankel: logical. True if calculating the PP and QQ matrices i.e.
+%               replacing psi(sx) with xi(sx)
+%       - stGeometry (optional): struct with geometry
+%
+% Output:
+%       - CstPQa: struct containing P and Q matrices in block-rvh form.
+%
+% Dependency:
+%   slvGetOptionsFromStruct, sphMakeGeometry, sphEstimateDelta,
+%   sphCalculatePQ
+
 
 a = stParams.a;
 c = stParams.c;
@@ -126,11 +142,14 @@ nNbTheta = stParams.nNbTheta;
 
 stk1s.bOutput=bOutput;
 
+
 % Make structure describing spheroidal geometry and quadrature points for
 % numerical integrations
-stGeometry = sphMakeGeometry(nNbTheta, a, c);
+if nargin < 4
+    stGeometry = sphMakeGeometry(nNbTheta, a, c);
+end
 
-if Delta<0 % then need to estimate Delta
+if Delta < 0 % then need to estimate Delta
     [Delta, T2211err]= sphEstimateDelta(stGeometry, stk1s);
     if isnan(Delta)
         disp ('ERROR: Delta could not be found. Results are likely to be non-converged. Try choosing Delta manually instead.');
@@ -141,7 +160,7 @@ end
 
 NQ = N+Delta;% NQ>=N: Maximum multipole order for computing P and Q matrices
 
-CstPQa =  sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB, coated);
+CstPQa =  sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB, hankel);
 end
 
 
@@ -152,6 +171,7 @@ function [D11, D12, D21, D22] = combineMatrixStructures(A,B,C)
     % D = A + B * C
     % with the same structure
     
+    % This is just simplifying variable calls
     A11 = A.M11;
     A12 = A.M12;
     A21 = A.M21;
@@ -167,6 +187,8 @@ function [D11, D12, D21, D22] = combineMatrixStructures(A,B,C)
     C21 = C.M21;
     C22 = C.M22;
     
+    % This is the important part
+    % Block matrix solution to D = A + B * C
     D11 = A11 + (B11*C11 + B12*C21);
     D12 = A12 + (B11*C12 + B12*C22);
     D21 = A21 + (B21*C11 + B22*C21);

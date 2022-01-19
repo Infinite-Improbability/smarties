@@ -25,9 +25,6 @@ function [Q] = exportQmatrix(stQ, complete, invert, filename, format)
 % Dependency:
 % combine_oeeo
 
-%% Parse input parameters
-% TODO: Decide between positional or keyword args
-
 arguments
     stQ cell
     complete logical = false % For T matrix this defaults to true

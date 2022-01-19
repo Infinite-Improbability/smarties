@@ -33,7 +33,7 @@ close all
 % <<../fig/schematicp.png>>
 %
 h = 10; % aspect ratio, h=c/a for prolate spheroids
-s = 1.5+0.02i; % relative refractive index
+s = 1.05; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
 xmax = 10; % maximum size parameter xmax= k1 * max(a,c)
 % ... from which we deduce
@@ -81,13 +81,10 @@ stParams2=stParams;
 stParams2.N=stParams2.N+5;
 stParams2.nNbTheta=stParams2.nNbTheta+5;
 [stCoa2, CstTRa2] = slvForT(stParams2,stOptions);
-fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N, toc);
+fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N+5, toc);
 
 %% Reshape the T-matrix to long format, and export to text file
-T = exportTmatrix(CstTRa, 'Tmatrix.txt');
-% TODO: This doesn't actually export to text file because of bad argument
-% handling - the string is based to the complete argument, not the out
-% argument
+T = exportTmatrix(CstTRa, true, 'Tmatrix.txt');
 
 %% Display orientation-averaged results
 fprintf('Results for a=%g, c=%g, k1=%g, s=%g+%gi, N=%d, Nt=%d\n',...

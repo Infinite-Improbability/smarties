@@ -61,7 +61,7 @@ end
 M = length(absmvec); % number of m values
 
 bOutput=true; % default
-if isfield(stParams,'bOutput');
+if isfield(stParams,'bOutput')
     bOutput = stParams.bOutput;
 end
 

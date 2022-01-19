@@ -32,23 +32,23 @@ close all
 %
 % <<../fig/schematicp.png>>
 %
-h = 10; % aspect ratio, h=c/a for prolate spheroids
-s = 1.5+0.02i; % relative refractive index
+h = 5/2; % aspect ratio, h=c/a for prolate spheroids
+s = 1.05; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
-xmax = 10; % maximum size parameter xmax= k1 * max(a,c)
+xmax = 5; % maximum size parameter xmax= k1 * max(a,c)
 % ... from which we deduce
 c = xmax / k1;
 a = c / h;
 
 % We define  aspect ratio, wavenumber, and size parameter for a
 % prolate spheroid core
-hIn = 8; % aspect ratio, h=c/a for prolate spheroids
-sIn = 1.5+0.02i / s; % relative refractive index (relative to s, coating)
+q = 0.5; % Ratio of inner / outer
+hIn = h; % aspect ratio, h=c/a for prolate spheroids
+sIn = (1.02 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
-cIn = c * 0.8;
+cIn = c * q;
 aIn = cIn / hIn;
-xmaxIn = real(kIn) * max(aIn, cIn); % maximum size parameter xmaxIn= kIn * max(aIn,cIn)
-% TODO: Check real cast
+xmaxIn = kIn * max(aIn, cIn); % maximum size parameter xmaxIn= kIn * max(aIn,cIn)
 
 %% Collect simulation parameters in a structure
 stParamsCoat.a=a; stParamsCoat.c=c;
@@ -67,11 +67,11 @@ stOptions.bOutput = true;
 % nNbTheta: Number of points for Gaussian quadratures to compute integrals in P and Q matrices
 
 % Those can be estimated automatically for some desired accuracy as follows
-[N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8);
+% [N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8);
 
 % In many instances, it will be more efficient to set those manually, e.g.
-% N = 30;
-% nNbTheta = 120;
+ N = 40;
+ nNbTheta = 120;
 
 % Add those to the parameters structure
 stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
@@ -97,13 +97,10 @@ stParams2Core.N=stParams2Core.N+5;
 stParams2Coat.nNbTheta=stParams2Coat.nNbTheta+5;
 stParams2Core.nNbTheta=stParams2Core.nNbTheta+5;
 [stCoa2, CstTRa2] = slvForTCoated(stParams2Core, stParams2Coat, stOptions);
-fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N, toc);
+fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N+5, toc);
 
 %% Reshape the T-matrix to long format, and export to text file
-T = exportTmatrix(CstTRa, 'Tmatrix.txt');
-% TODO: This doesn't actually export to text file because of bad argument
-% handling - the string is sent to the 'complete' parameter, not the 'out'
-% parameter
+T = exportTmatrix(CstTRa, true, 'Tmatrix.txt');
 
 %% Display orientation-averaged results
 fprintf('Results for a=%g, c=%g, k1=%g, s=%g+%gi, N=%d, Nt=%d\n',...

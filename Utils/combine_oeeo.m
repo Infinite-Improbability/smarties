@@ -20,7 +20,6 @@ function [M, nvec] = combine_oeeo(stMa, fieldname)
     
     if(nargin < 2)
         fieldname = 'st4MT';
-        % TODO: Improve this to account for Q matrices
     end
     
     

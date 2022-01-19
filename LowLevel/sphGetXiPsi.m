@@ -31,7 +31,7 @@ function stBessel = sphGetXiPsi(nNmax, s, x, NB, coated)
 %             - psipsi: [N+2 x N+2 x T] The product psi_n psi_k
 %             - chin: [N+2 x T] chi_n(x) (for n=0..N+1)
 %             - psin: [N+2 x T] psi_n(x) (for n=0..N+1)
-%             - chik: [N+2 x T] chi_k(sx) (for n=0..N+1)
+%             - psik: [N+2 x T] psi_k(sx) (for n=0..N+1)
 %
 % Dependency: 
 % sphGetFpovx, vshRBpsi
@@ -41,6 +41,8 @@ function stBessel = sphGetXiPsi(nNmax, s, x, NB, coated)
 [chipsi,chin,psik] = sphGetFpovx(NB+1, s, x, coated);
 % chipsi is [NB+2 x NB+2 x X]
 % chin, psik are [X x NB+2]
+% pski = psi_k(sx) is transfomed into a 1st order hankel function h(sx)
+% when coated is true 
 
 % The rest calculates the normal psipsi products using standard Matlab
 % functions to compute the Bessel functions (only up to N+2)
