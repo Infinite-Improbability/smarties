@@ -32,10 +32,10 @@ close all
 %
 % <<../fig/schematicp.png>>
 %
-h = 5/2; % aspect ratio, h=c/a for prolate spheroids
+h = 2; % aspect ratio, h=c/a for prolate spheroids
 s = 1.05; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
-xmax = 5; % maximum size parameter xmax= k1 * max(a,c)
+xmax = 15.874010519681994; % maximum size parameter xmax= k1 * max(a,c)
 % ... from which we deduce
 c = xmax / k1;
 a = c / h;
@@ -44,7 +44,7 @@ a = c / h;
 % prolate spheroid core
 q = 0.5; % Ratio of inner / outer
 hIn = h; % aspect ratio, h=c/a for prolate spheroids
-sIn = (1.02 + 0.01i) / s; % relative refractive index (relative to s, coating)
+sIn = (1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
 cIn = c * q;
 aIn = cIn / hIn;
@@ -70,7 +70,7 @@ stOptions.bOutput = true;
 % [N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8);
 
 % In many instances, it will be more efficient to set those manually, e.g.
- N = 40;
+ N = 30;
  nNbTheta = 120;
 
 % Add those to the parameters structure

@@ -47,11 +47,11 @@ k1 = stParamsCoat.k1;
 %% Get T1 (T-matrix for core in medium matching coating)
 [~, TRCore] = slvForT(stParamsCore, stOptions);
 
-%% Get P2, Q2
-PQ = getPQ(stParamsCoat, stOptions, false);
+%% Get P2, Q2, PP2, QQ2
+NQ = N; % TODO: Add proper convergence checking
+stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c);
+[PQ, PPQQ] = coaCalculateTMatrix(NQ, absmvec, stGeometryCoat, stParamsCoat);
 
-%% Get PP2, QQ2 by using hankel functions in place of bessel functions
-PPQQ = getPQ(stParamsCoat, stOptions, true);
 
 %% Combine to get T-matrix for coated particle
 % We'll get a variable with the right structure we can overwrite.
@@ -105,63 +105,6 @@ stCoa = rvhGetAverageCrossSections(k1, CstTRa);
 
 end
 
-
-
-function CstPQa = getPQ(stParams, stOptions, hankel, stGeometry)
-%% getPQ
-% Wrapper around sphCalculatePQ that prepares some variables. Based on
-% slvforT.
-%
-% Input:
-%       - stParams: struct with parameters describing scenario
-%               See slvForT for details.
-%       - stOptions: struct with optional parameters, see
-%               slvGetOptionsFromStruct for details.
-%       - hankel: logical. True if calculating the PP and QQ matrices i.e.
-%               replacing psi(sx) with xi(sx)
-%       - stGeometry (optional): struct with geometry
-%
-% Output:
-%       - CstPQa: struct containing P and Q matrices in block-rvh form.
-%
-% Dependency:
-%   slvGetOptionsFromStruct, sphMakeGeometry, sphEstimateDelta,
-%   sphCalculatePQ
-
-
-a = stParams.a;
-c = stParams.c;
-
-stk1s.k1 = stParams.k1;
-stk1s.s = stParams.s;
-
-N = stParams.N;
-nNbTheta = stParams.nNbTheta;
-
-[~,Delta,NB,absmvec,~, bOutput] = slvGetOptionsFromStruct(stParams,stOptions);
-
-stk1s.bOutput=bOutput;
-
-
-% Make structure describing spheroidal geometry and quadrature points for
-% numerical integrations
-if nargin < 4
-    stGeometry = sphMakeGeometry(nNbTheta, a, c);
-end
-
-if Delta < 0 % then need to estimate Delta
-    [Delta, T2211err]= sphEstimateDelta(stGeometry, stk1s);
-    if isnan(Delta)
-        disp ('ERROR: Delta could not be found. Results are likely to be non-converged. Try choosing Delta manually instead.');
-        return;
-    end
-    disp (['Delta estimated to \Delta=', int2str(Delta),' with relative error in T_{11}^{22,m=1} of ',  num2str(T2211err)]);
-end
-
-NQ = N+Delta;% NQ>=N: Maximum multipole order for computing P and Q matrices
-
-CstPQa =  sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB, hankel);
-end
 
 
 function [D11, D12, D21, D22] = combineMatrixStructures(A,B,C)

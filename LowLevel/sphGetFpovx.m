@@ -64,8 +64,8 @@ Fpovx(nNmax+1, 1:(nNmax-4+1), :) = bsxfun(@times,FpRow,1./x.');
 % do n, k-1 (West) recursion [Solving for F^+_{n,k-1} in Eq. 51 (dividing
 % all terms by x]
 % We only do n+k even
-% The recursion in Eq. 51 holds true for chi_n(x) * xi_n(sx) as well as for
-% chi_n(x) * xi_n(sx).
+% The recursion in Eq. 51 holds true for chi_n(x) * xi_k(sx) as well as for
+% chi_n(x) * psi_k(sx).
 for kk=nNmax:-1:0
     kInd=kk+1; % kk is the k-value, kInd is the index
     % First fill in the matrix where there are no cancellations (n=0..k+2)
