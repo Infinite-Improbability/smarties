@@ -29,6 +29,11 @@ for m = absmvec
     i = nMin:nMax;
     rel = zeros(1, nMax);
     rel(i) = i-nMin+1; % the assignment to a specific slice of rel is important
+    
+    % Now we calculate P, Q matrices for current m
+    % M_ij; i = row index; j = column index
+    P = zeros(2*nMax); PP = zeros(2*nMax);
+    Q = zeros(2*nMax); QQ = zeros(2*nMax);
 
     % Loop over theta
     for thetaIndex = 1:length(stGeometry.theta)
@@ -71,11 +76,6 @@ for m = absmvec
                 delta(k) = nVec(k)*cosTheta*wig(k+1) - wig(k)*sqrt((nVec(k)^2 - nVec(m)^2));
             end
         end
-    
-        % Now we calculate P, Q matrices for current m
-        % M_ij; i = row index; j = column index
-        P = zeros(2*nMax); PP = zeros(2*nMax);
-        Q = zeros(2*nMax); QQ = zeros(2*nMax);
     
         % See that P,Q =0 when (i or j are less than m) and m>1
         % So the loop goes from MTOPE to NMAX, MTOPE being the minimum value
