@@ -50,11 +50,10 @@ for m = absmvec
 
         wig = wigner(sinTheta, cosTheta, m, nMax);
 
-        % sRadiusProd = s * radius;
-        
-        hankel = besselh(0:(nMax+1), radius);
-        bessel = besselj(0:(nMax+1), s*radius);
-        hankel2 = besselh(0:(nMax+1), s*radius);
+        % spherical bessel functions
+        hankel = sqrt(pi/(2*radius)) * besselh((0:nMax)+0.5, radius);
+        bessel = sqrt(pi/(2*s*radius)) * besselj((0:nMax)+0.5, s*radius);
+        hankel2 = sqrt(pi/(2*s*radius)) * besselh((0:nMax)+0.5, s*radius);
     
         % Setup a delta function
         % Delta(i)= cos(theta) * Delta(i-1) - i * sin(theta)^2 * Wigner(i)
