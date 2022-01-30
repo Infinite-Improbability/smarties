@@ -9,6 +9,7 @@ s = stParams.s; % relative refractive index
 absmvec = transpose(absmvec); % transposing the vector so we can easily iterate over it in the for loop argument
 
 % Gaussian quadrature is provided as geometry
+load('tmp_stGeometry.mat', 'stGeometry') % for testing purposes
 
 % Calculate n and n(n+1)
 nVec = 1:(nMax+1);
@@ -40,9 +41,9 @@ for m = absmvec
         theta = stGeometry.theta(thetaIndex);
 
         % Don't need to integrate from pi/2 to pi
-        % if theta > (stParams.nNbTheta / 2)
-        %     continue % TODO: Is it safe to break out of the loop entirely?
-        % end
+        if thetaIndex > (stParams.nNbTheta / 2)
+            continue % TODO: Is it safe to break out of the loop entirely?
+        end
         % sphMakeGeometry skips over generating these points entirely
 
         sinTheta = sin(theta);
@@ -69,7 +70,7 @@ for m = absmvec
             delta(1) = -sin2Theta;
             delta(2) = -3*sin2Theta*cosTheta;
             for k = 3:nMax
-                delta(k) = delta(k-1)*cosTheta - nVec(1)*sin2Theta*wig(k);
+                delta(k) = delta(k-1)*cosTheta - nVec(k)*sin2Theta*wig(k);
             end
         else
             for k = nMin:nMax
@@ -92,7 +93,7 @@ for m = absmvec
         ib(i) = s .* bessel(i) ./ bessel(i+1);
         ka(i) = ja(i) - ia(i);
         wig2(i) = wig(i+1) .* nVecProd(i) .* drSinTheta;
-        cb(i) = s .* hankel2(i) / hankel2(i+1);
+        cb(i) = s .* hankel2(i) ./ hankel2(i+1);
 
         for j = i % remember i is a vector
             % Dividing matrices in four block matrices
@@ -202,7 +203,14 @@ for m = absmvec
 	        QQ(rel(ii),rel(j)) = QQ(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd.*ze+zf)).';
 			zdx = zd - (ja(ii) - ia(ii)) .* radius;
 	        PP(rel(ii),rel(j)) = PP(rel(ii),rel(j)) + (jz(ii) .* x1 .* (zdx.*ze+zf)).';
+            
+            % testing
+            if m == 0
+                % disp([theta j Q(60,60)]);
+            end
+        
         end % end of the loop over j
+        
 
     end % end of the loop over theta
 
@@ -230,10 +238,6 @@ function wig = wigner(sinTheta, cosTheta, m, nMax)
 %   - wig: [nMax+1 x 1] wig(n) = d_{m,0}^{n-1}(theta) for n=1:nMax
 
 % d_{0,0}^{n}(theta) = P_l(cos(theta))
-% TODO: I am not convinced this reccurence relationship is correct
-% I would have expected (n+1)*wig(n+1) - (2n+1)*cosTheta*wig(n) + n*wig(n-1) = 0
-% to match Legendre polynomials
-% Instead we get
 
 wig = zeros(1, nMax+1);
 

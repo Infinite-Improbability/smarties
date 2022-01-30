@@ -45,6 +45,11 @@ N = min(stParamsCoat.N, stParamsCore.N);
 k1 = stParamsCoat.k1;
 
 %% Get T1 (T-matrix for core in medium matching coating)
+% We want to multiply the equivalent-volume-sphere radius by the refractive
+% index of the coating. This can be achieved by multiplying a and c of the
+% core by the same refractive index.
+stParamsCore.a = stParamsCore.a * stParamsCoat.s;
+stParamsCore.c = stParamsCore.c * stParamsCoat.s;
 [~, TRCore] = slvForT(stParamsCore, stOptions);
 
 %% Get P2, Q2, PP2, QQ2
