@@ -44,7 +44,7 @@ a = c / h;
 % prolate spheroid core
 q = 0.5; % Ratio of inner / outer
 hIn = h; % aspect ratio, h=c/a for prolate spheroids
-sIn = (1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
+sIn = 1; %(1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
 cIn = c * q;
 aIn = cIn / hIn;
@@ -58,7 +58,7 @@ stParamsCore.k1=kIn; stParamsCore.s=sIn;
 % Optional parameters may also be defined as follows:
 stOptions.bGetR = false;
 stOptions.Delta = 0;
-stOptions.NB = 0; % NB will be estimated automatically
+stOptions.NB = 0; % NB will be estimated automatically (not implemented)
 stOptions.bGetSymmetricT = false;
 stOptions.bOutput = true;
 

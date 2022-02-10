@@ -1,4 +1,4 @@
-function [PQcells, PPQQcells] = coaCalculateTMatrix(nMax, absmvec, stGeometry, stParams)
+function [PQcells, PPQQcells] = coaCalculateTMatrix(nMax, absmvec, stGeometry, stParams, Tcells)
 %coaCalculateTMatrix - Description
 %
 % Syntax: T = coaCalculateTMatrix(input)
@@ -9,7 +9,6 @@ s = stParams.s; % relative refractive index
 absmvec = transpose(absmvec); % transposing the vector so we can easily iterate over it in the for loop argument
 
 % Gaussian quadrature is provided as geometry
-load('tmp_stGeometry.mat', 'stGeometry') % for testing purposes
 
 % Calculate n and n(n+1)
 nVec = 1:(nMax+1);
@@ -24,12 +23,12 @@ PPQQcells = cell(1, length(absmvec));
 % m is the multipole we are computing at?
 % TODO: Vectorise more? Both this loop and interior ones
 for m = absmvec
-    nMin = max(1, m); % Minimum value of i,j for M_ij to be non-zero
-    n = nMax - nMin + 1; % size of the matrices for a given m (since n,k>=m)
+    mMin = max(1, m); % Minimum value of i,j for M_ij to be non-zero
+    n = nMax - mMin + 1; % size of the matrices for a given m (since n,k>=m)
 
-    i = nMin:nMax;
+    i = mMin:nMax;
     rel = zeros(1, nMax);
-    rel(i) = i-nMin+1; % the assignment to a specific slice of rel is important
+    rel(i) = i-mMin+1; % the assignment to a specific slice of rel is important
     
     % Now we calculate P, Q matrices for current m
     % M_ij; i = row index; j = column index
@@ -73,7 +72,7 @@ for m = absmvec
                 delta(k) = delta(k-1)*cosTheta - nVec(k)*sin2Theta*wig(k);
             end
         else
-            for k = nMin:nMax
+            for k = mMin:nMax
                 delta(k) = nVec(k)*cosTheta*wig(k+1) - wig(k)*sqrt((nVec(k)^2 - nVec(m)^2));
             end
         end
@@ -108,7 +107,7 @@ for m = absmvec
             if m ~= 0
                 % For plane-symmetric particles and i+j=even, matrix elements are zero
                 % i = nMin:nMax so if i(1)+j=nMin+j is even, i(1:2:end)+j will be even
-                if mod(nMin+j, 2) ~= 0
+                if mod(mMin+j, 2) ~= 0
                     ii = i(1:2:end);
                 else
                     ii = i(2:2:end);
@@ -121,7 +120,7 @@ for m = absmvec
                     gm1 = -gm1;
                 end
 
-                za = radius + ia(ii) .* (radius .* ib(j) - nVec(j)) - nVec(ii) .* ib(j) .* ipj;
+                za = radius + ia(ii) .* (radius .* ib(j) - nVec(j)) - nVec(ii) .* ib(j) + ipj;
                 zb = (delta(ii) .* wig(j+1) + delta(j) .* wig(ii+1)) * radius;
                 zc = i1 .* (nVecProd(ii) .* ib(j) + nVecProd(j) .* ia(ii) - ipj .* (nVec(ii) + nVec(j) + 2));
                 zr = zc + ka(ii) .* nVecProd(j) .* i1;
@@ -157,7 +156,7 @@ for m = absmvec
 
             % M11, M22 calculations
             % For plane-symmetric particles and i+j=odd, matrix elements are zero
-            if mod(nMin+j, 2) == 0
+            if mod(mMin+j, 2) == 0
                 ii = i(1:2:end);
             else
                 ii = i(2:2:end);
@@ -214,9 +213,30 @@ for m = absmvec
 
     end % end of the loop over theta
 
+    % Testing: alt combination method
+%     T = rvhGetFullMatrix(Tcells{m+1}, 'st4MT');
+%     for i=1:n
+%         for j = 1:n
+%             for k = 1:n
+%                 if mod(i+j, 2) == 0
+%                     Q(i,j) = Q(i,j) + QQ(i,k)*T(k,j) + Q(i,k+n)*T(k+n,j);
+% 		            P(i,j) = P(i,j) + PP(i,k)*T(k,j) + PP(i,k+n)*T(k+n,j);
+%                     Q(i+n,j+n) = Q(i+n,j+n) + QQ(i+n,k)*T(k,j+n) + QQ(i+n,k+n)*T(k+n,j+n);
+% 		            P(i+n,j+n) = P(i+n,j+n) + PP(i+n,k)*T(k,j+n) + PP(i+n,k+n)*T(k+n,j+n);
+%                 else
+%                     Q(i,j+n) = Q(i,j+n) + QQ(i,k)*T(k,j+n) + QQ(i,k+n)*T(k+n,j+n);
+%                     P(i,j+n) = P(i,j+n) + PP(i,k)*T(k,j+n) + PP(i,k+n)*T(k+n,j+n);
+%                     Q(i+n,j) = Q(i+n,j) + QQ(i+n,k)*T(k,j) + QQ(i+n,k+n)*T(k+n,j);
+%                     P(i+n,j) = P(i+n,j) + PP(i+n,k)*T(k,j) + PP(i+n,k+n)*T(k+n,j);
+%                 end
+%             end
+%         end
+%     end
+
     % Save it in the standard smarties format
     PQcells{1, m+1} = cellExport(P, Q, m, nMax);
     PPQQcells{1, m+1} = cellExport(PP, QQ, m, nMax);
+
 
 end % end of the loop over m
 

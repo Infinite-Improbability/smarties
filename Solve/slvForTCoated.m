@@ -50,13 +50,22 @@ k1 = stParamsCoat.k1;
 % core by the same refractive index.
 stParamsCore.a = stParamsCore.a * stParamsCoat.s;
 stParamsCore.c = stParamsCore.c * stParamsCoat.s;
+% load("tmp_stGeometry.mat", "stGeometryCore"); % for testing
 [~, TRCore] = slvForT(stParamsCore, stOptions);
 
 %% Get P2, Q2, PP2, QQ2
-NQ = N; % TODO: Add proper convergence checking
-stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c);
-[PQ, PPQQ] = coaCalculateTMatrix(NQ, absmvec, stGeometryCoat, stParamsCoat);
+NQ = N+Delta; % TODO: Add proper convergence checking
+% stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c);
+tmp = load('tmp_stGeometry.mat', 'stGeometry'); stGeometryCoat = tmp.stGeometry; % for testing purposes
+[PQ, PPQQ] = coaCalculateTMatrix(NQ, absmvec, stGeometryCoat, stParamsCoat, TRCore);
 
+% If needed, discard higher order multipoles
+% (which are affected by the finite size of P and Q)
+% N+Delta>=N: Maximum multipole order for computing P and Q matrices
+if (N+Delta)>N
+    PQ = rvhTruncateMatrices(PQ, N);
+    PPQQ = rvhTruncateMatrices(PPQQ, N);
+end
 
 %% Combine to get T-matrix for coated particle
 % We'll get a variable with the right structure we can overwrite.
@@ -65,6 +74,14 @@ PQCombined = PQ;
 % Then find the combined matrix for each m
 for m = 1:length(absmvec)
     suffixes = ["eo" "oe"];
+    
+    % Testing
+    Tm = rvhGetFullMatrix(TRCore{m}, 'st4MT');
+    Qm = rvhGetFullMatrix(PQ{m}, 'st4MQ');
+    Pm = rvhGetFullMatrix(PQ{m}, 'st4MP');
+    QQm = rvhGetFullMatrix(PPQQ{m}, 'st4MQ');
+    PPm = rvhGetFullMatrix(PPQQ{m}, 'st4MP');
+
     for sufIndex = 1:2
         suffix = char(suffixes(sufIndex));
         T = TRCore{m}.(['st4MT', suffix]);
@@ -73,31 +90,39 @@ for m = 1:length(absmvec)
         PP = PPQQ{m}.(['st4MP', suffix]);
         QQ = PPQQ{m}.(['st4MQ', suffix]);
         
+        % TODO: Running slvForT is a waste of time in this case - skip
+        % Should also run if core size is zero
+        if stParamsCore.s == 1
+            T.M11(:,:) = 0;
+            T.M12(:,:) = 0;
+            T.M21(:,:) = 0;
+            T.M22(:,:) = 0;
+        end
+        
         [P11, P12, P21, P22] = combineMatrixStructures(P, PP, T);
-        [Q11, Q12, Q21, Q22] = combineMatrixStructures(Q, QQ, T);
         
         PQCombined{m}.(['st4MP', suffix]).M11 = P11;
         PQCombined{m}.(['st4MP', suffix]).M12 = P12;
         PQCombined{m}.(['st4MP', suffix]).M21 = P21;
         PQCombined{m}.(['st4MP', suffix]).M22 = P22;
         
+        [Q11, Q12, Q21, Q22] = combineMatrixStructures(Q, QQ, T);
+        
         PQCombined{m}.(['st4MQ', suffix]).M11 = Q11;
         PQCombined{m}.(['st4MQ', suffix]).M12 = Q12;
         PQCombined{m}.(['st4MQ', suffix]).M21 = Q21;
         PQCombined{m}.(['st4MQ', suffix]).M22 = Q22;
     end
+
+    % Testing
+    Qcm = rvhGetFullMatrix(PQCombined{m}, 'st4MQ');
+    Pcm = rvhGetFullMatrix(PQCombined{m}, 'st4MP');
 end
 
 % Get T (and possibly R)
 CstTRa = rvhGetTRfromPQ(PQCombined,bGetR);
 
-% If needed, discard higher order multipoles
-% (which are affected by the finite size of P and Q)
-% N+Delta>=N: Maximum multipole order for computing P and Q matrices
-if (N+Delta)>N
-    CstTRa = rvhTruncateMatrices(CstTRa, N);
- end
-% T and R matrices now go up to N multipoles
+
 
 % If required, symmetrize the T-matrix
 if bGetSymmetricT
@@ -137,9 +162,9 @@ function [D11, D12, D21, D22] = combineMatrixStructures(A,B,C)
     
     % This is the important part
     % Block matrix solution to D = A + B * C
-    D11 = A11 + (B11*C11 + B12*C21);
-    D12 = A12 + (B11*C12 + B12*C22);
-    D21 = A21 + (B21*C11 + B22*C21);
-    D22 = A22 + (B21*C12 + B22*C22);
+    D11 = A11 + B11*C11 + B12*C21;
+    D12 = A12 + B11*C12 + B12*C22;
+    D21 = A21 + B21*C11 + B22*C21;
+    D22 = A22 + B21*C12 + B22*C22;
     
 end

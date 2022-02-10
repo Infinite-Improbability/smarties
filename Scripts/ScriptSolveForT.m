@@ -33,9 +33,9 @@ close all
 % <<../fig/schematicp.png>>
 %
 h = 2; % aspect ratio, h=c/a for prolate spheroids
-s = (1.2 + 0.01i); % relative refractive index
+s = 1.05; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
-xmax = 5; % maximum size parameter xmax= k1 * max(a,c)
+xmax = 15.874010519681994; % maximum size parameter xmax= k1 * max(a,c)
 % ... from which we deduce
 c = xmax / k1;
 a = c / h;
