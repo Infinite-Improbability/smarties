@@ -55,8 +55,8 @@ stParamsCore.c = stParamsCore.c * stParamsCoat.s;
 
 %% Get P2, Q2, PP2, QQ2
 NQ = N+Delta; % TODO: Add proper convergence checking
-% stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c);
-tmp = load('tmp_stGeometry.mat', 'stGeometry'); stGeometryCoat = tmp.stGeometry; % for testing purposes
+stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c, [], 'gauss2');
+% tmp = load('tmp_stGeometry.mat', 'stGeometry'); stGeometryCoat = tmp.stGeometry; % for testing purposes
 [PQ, PPQQ] = coaCalculateTMatrix(NQ, absmvec, stGeometryCoat, stParamsCoat, TRCore);
 
 % If needed, discard higher order multipoles

@@ -7,8 +7,9 @@ function stRtfunc = auxPrepareIntegrals(nNint, sInt)
 %
 %	Input:
 %	- nNint: the number of integration points required
-%	- sInt: the integration scheme, either 'gauss' for Gaussian quadrature, or
-%	'rectangle' for Simpson.
+%	- sInt: the integration scheme, either 'gauss' for Gaussian quadrature,
+%       'gauss2' for alternate theta generation as used for coatings, or
+%	    'rectangle' for Simpson.
 %
 %	Output:
 %	A structure with fields nNbTheta (number of theta), theta, and wTheta
@@ -21,6 +22,11 @@ function stRtfunc = auxPrepareIntegrals(nNint, sInt)
 %
 % Dependency:
 % auxInitLegendreQuad
+
+arguments
+    nNint double {mustBePositive,mustBeInteger}
+    sInt string {mustBeTextScalar, mustBeMember(sInt, {'gauss', 'gauss2', 'rectangle'})} = 'gauss'
+end
 
 % Defines integration types
 switch lower(sInt)
@@ -72,6 +78,15 @@ switch lower(sInt)
         stRtfunc.theta=transpose(linspace(0,pi,nNbTheta)); % [T x 1]
         dtheta=pi/(nNbTheta-1);
         stRtfunc.wTheta=dtheta*sin(stRtfunc.theta); % [T x 1]
+
+    case 'gauss2'
+        % Differences from case 'gauss' are that we generate xi points in
+        % range [0,pi] and use these as theta, rather than generating xi
+        % for [-1,1] and converting to theta with acos(xi). For some reason
+        % this is required to get correct coated results.
+        [xi,wi]=auxInitLegendreQuad(nNint, pi, 0); % we use [pi,0] as [0,pi] gives xi in descending order.
+        stRtfunc.theta=xi; % [T x 1]
+        stRtfunc.wTheta=wi; % [T x 1]
 
     otherwise
         disp 'Integration type not recognized'

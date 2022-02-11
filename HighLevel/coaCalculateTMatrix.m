@@ -5,22 +5,27 @@ function [PQcells, PPQQcells] = coaCalculateTMatrix(nMax, absmvec, stGeometry, s
 %
 % Long description
 
+% TODO: Use arguments block
+
 s = stParams.s; % relative refractive index
-absmvec = transpose(absmvec); % transposing the vector so we can easily iterate over it in the for loop argument
+absmvec = transpose(absmvec); % transposing the vector so we can easily
+% iterate over it in the for loop argument
 
 % Gaussian quadrature is provided as geometry
 
 % Calculate n and n(n+1)
 nVec = 1:(nMax+1);
-nVecProd = nVec .* (nVec+1);
+nVecProd = nVec .* (nVec+1); % n(n+1)
 
-gm = sqrt((2 * nVec + 1) ./ nVecProd); % what is this?
+gm = sqrt((2 * nVec + 1) ./ nVecProd); % An, but where smarties uses
+% sqrt((2n+1)/(2n(n+1))), this is sqrt((2n+1)/(n(n+1)))
+% i.e. An = gm / sqrt(2)
 
 PQcells = cell(1, length(absmvec));
 PPQQcells = cell(1, length(absmvec));
 
 % LISA loops from 0 to stParams.n, but we have absmvec for that
-% m is the multipole we are computing at?
+% m is the multipole we are computing at.
 % TODO: Vectorise more? Both this loop and interior ones
 for m = absmvec
     mMin = max(1, m); % Minimum value of i,j for M_ij to be non-zero
@@ -29,8 +34,12 @@ for m = absmvec
     i = mMin:nMax;
     rel = zeros(1, nMax);
     rel(i) = i-mMin+1; % the assignment to a specific slice of rel is important
+    % rel gives the position of a submatrix index in the larger matrix
+    % the code can probably be reworked to eliminate it
     
     % Now we calculate P, Q matrices for current m
+    % The PP and QQ matrices use hankel functions in place of bessel funcs
+    % with the arguement s*radius
     % M_ij; i = row index; j = column index
     P = zeros(2*nMax); PP = zeros(2*nMax);
     Q = zeros(2*nMax); QQ = zeros(2*nMax);
@@ -39,30 +48,38 @@ for m = absmvec
     for thetaIndex = 1:length(stGeometry.theta)
         theta = stGeometry.theta(thetaIndex);
 
-        % Don't need to integrate from pi/2 to pi
-        if thetaIndex > (stParams.nNbTheta / 2)
+        % Don't need to integrate from pi/2 to pi due to symmetry
+        % Just double the integral.
+        % Since we only go from 0 to pi/2 this leaves Q and P at half their
+        % 'correct' values. But since we then multiply T = -P * Q^-1 this
+        % cancels out.
+        if theta > (pi / 2)
             continue % TODO: Is it safe to break out of the loop entirely?
         end
         % sphMakeGeometry skips over generating these points entirely
 
         sinTheta = sin(theta);
-        sin2Theta = sinTheta^2;
+        sin2Theta = sinTheta ^ 2;
         cosTheta = cos(theta);
         weightedSin = stGeometry.wTheta(thetaIndex) * sinTheta;
         radius = stGeometry.r(thetaIndex); % r(theta)
         dRadius = stGeometry.drdt(thetaIndex); % dr/dtheta
         drSinTheta = dRadius * sinTheta;
-
+        
+        % We use Wigner functions in place of Legendre funcs since they
+        % don't explode for high n,m
         wig = wigner(sinTheta, cosTheta, m, nMax);
 
         % spherical bessel functions
-        hankel = sqrt(pi/(2*radius)) * besselh((0:nMax)+0.5, radius);
-        bessel = sqrt(pi/(2*s*radius)) * besselj((0:nMax)+0.5, s*radius);
-        hankel2 = sqrt(pi/(2*s*radius)) * besselh((0:nMax)+0.5, s*radius);
+        % all are first kind
+        % TODO: Consider Riccati-Bessel funcs
+        hankel = sqrt(pi/(2*radius)) * besselh((0:nMax)+0.5, radius); % hn(radius)
+        bessel = sqrt(pi/(2*s*radius)) * besselj((0:nMax)+0.5, s*radius); % jn(s*radius)
+        hankel2 = sqrt(pi/(2*s*radius)) * besselh((0:nMax)+0.5, s*radius); % hn(s*radius)
     
         % Setup a delta function
         % Delta(i)= cos(theta) * Delta(i-1) - i * sin(theta)^2 * Wigner(i)
-         % for m=0; when m ~= 0, it is slightly different
+        % for m=0; when m ~= 0, it is slightly different
         % Also note that i is an integer, not sqrt(-1)
         delta = zeros(1, nMax);
         if m == 0
@@ -77,8 +94,8 @@ for m = absmvec
             end
         end
     
-        % See that P,Q =0 when (i or j are less than m) and m>1
-        % So the loop goes from MTOPE to NMAX, MTOPE being the minimum value
+        % See that P,Q = 0 when (i or j are less than m) and m>1
+        % So the loop goes from mMin to nMax, mMin being the minimum value
         % of i,j so that we only calculate non-zero matrix elements
         iz = zeros(1, nMax); jz = zeros(1, nMax);
         ia = zeros(1, nMax); ja = zeros(1, nMax);
@@ -119,7 +136,9 @@ for m = absmvec
                 if mod(m,2) ~= 0
                     gm1 = -gm1;
                 end
-
+                
+                % TODO: Do the nVec calls change anything over using i,j
+                % directly?
                 za = radius + ia(ii) .* (radius .* ib(j) - nVec(j)) - nVec(ii) .* ib(j) + ipj;
                 zb = (delta(ii) .* wig(j+1) + delta(j) .* wig(ii+1)) * radius;
                 zc = i1 .* (nVecProd(ii) .* ib(j) + nVecProd(j) .* ia(ii) - ipj .* (nVec(ii) + nVec(j) + 2));

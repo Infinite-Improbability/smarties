@@ -1,4 +1,4 @@
-function stRtfunc = sphMakeGeometry(nNbTheta, a, c, theta)
+function stRtfunc = sphMakeGeometry(nNbTheta, a, c, theta, sInt)
 %% sphMakeGeometry
 % Evaluates the functions defining the geometry r(theta) for spheroids
 % 
@@ -11,8 +11,11 @@ function stRtfunc = sphMakeGeometry(nNbTheta, a, c, theta)
 %   nNbTheta:   the number of angles to use (in half of the shape)
 %	a:          the semi-axis length for axes along x, y
 %	c:          the semi-axis length along z (axis of rotation)
-%   theta:      (optional) theta values to calculate the geometry for; else uses
-%                   lgwt to generate quadrature
+%   theta:      (optional) [T x 1] theta values to calculate the geometry for; else uses
+%                   lgwt to generate quadrature.
+%   sInt:   (optional) string, default 'gauss;. If 'gauss2 then lgwt call
+%               is modified for compatibility with coated spheroids
+%               generation. See auxPrepareIntegrals for details.
 %
 % Output:
 %		stRtfunc	A structure containing fields
@@ -26,15 +29,21 @@ function stRtfunc = sphMakeGeometry(nNbTheta, a, c, theta)
 %           - c [1 x 1] Input parameter
 %			- h: [1 x 1] The aspect ratio, max(r)/min(r)
 %           - r0: [1 x 1] Equivalent-volume-sphere radius
-%           - sInt: String specifying 'Gauss' for quadrature or 'Pts'
-%             if theta are specified
+%           - sInt: String specifying 'Gauss' for quadrature, 'gauss2' for
+%               alt quadrature generation or 'Pts' if theta are specified.
 %
 % Dependency: 
 % auxPrepareIntegrals
 
-sInt='Gauss';
+arguments
+    nNbTheta double {mustBePositive,mustBeInteger}
+    a double {mustBeReal}
+    c double {mustBeReal}
+    theta (:,1) double  {mustBeReal} = []
+    sInt string {mustBeTextScalar, mustBeMember(sInt, {'gauss', 'gauss2'})} = 'gauss'
+end
 
-if (nargin == 4) % points only
+if all(size(theta) ~= 0) % points only
     if (size(theta,2)~=1)
         disp 'makeGeometry: theta should be a column vector... transposing';
         theta=transpose(theta);
