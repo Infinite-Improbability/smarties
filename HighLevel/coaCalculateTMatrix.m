@@ -159,8 +159,8 @@ for m = absmvec
                 % Additional matrices required by coat, PP and QQ
                 % Calculate using h(kr) in place of the j(kr) bessel function
                 za = radius * (1 + ia(ii) .* cb(j)) - nVec(j) .* ia(ii) - nVec(ii) .* cb(j) + ipj;
-                zc = zc + (cb(j) - ib(j)) .* nVec(j) .* i1;
-                zr = zc + ka(ii) .* nVec(j) .* i1;
+                zc = zc + (cb(j) - ib(j)) .* nVecProd(ii) .* i1;
+                zr = zc + ka(ii) .* nVecProd(j) .* i1;
                 x1 = nVec(m) .* gm1 .* hankel2(j+1);
                 % M21
                 QQ(n+rel(ii),rel(j)) = QQ(n+rel(ii),rel(j)) - (iz(ii) .* x1 .* (za .* zb + zc)).';
@@ -208,6 +208,10 @@ for m = absmvec
             Q(rel(ii),rel(j)) = Q(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf)).';
             zdx = zd - (ja(ii) - ia(ii)) * radius;
             P(rel(ii),rel(j)) = P(rel(ii),rel(j)) + (jz(ii) .* x1 .* (zdx .* ze + zf)).';
+
+%             if m == 0 && rel(j) == 1
+%                 fprintf('m = %g, Theta Index = %g, Q(29,1) = (%g, %g)\n', m, thetaIndex, real(Q(29,1)), imag(Q(29,1)));
+%             end
 
             % PP and QQ again
             zd = radius .* (cb(j) - s^2 .* ia(ii)) + s^2 .* nVec(ii) - nVec(j);
