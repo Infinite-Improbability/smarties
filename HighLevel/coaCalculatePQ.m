@@ -5,7 +5,8 @@ function [PQcells, PPQQcells] = coaCalculatePQ(nMax, absmvec, stGeometry, stPara
 % subsitution of hankel functions of the first kind in the place of bessel
 % functions with the argument (relative refractive index * radius).
 %
-% This implementation is based on code from LISA TODO: cite properly.
+% This implementation is based on code from LISA. See JQSRT 92 (2005)
+% 373-381.
 %
 % Input:
 %   - nMax:      [1 x 1] The maximum multipole order to return
@@ -54,12 +55,12 @@ PPQQcells = cell(1, length(absmvec));
 % m is the multipole we are computing at.
 % TODO: Vectorise more? Both this loop and interior ones
 for m = absmvec
-    mMin = max(1, m); % Minimum value of i,j for M_ij to be non-zero
-    n = nMax - mMin + 1; % size of the matrices for a given m (since n,k>=m)
+    nMin = max(1, m); % Minimum value of i,j for M_ij to be non-zero
+    n = nMax - nMin + 1; % size of the matrices for a given m (since n,k>=m)
 
-    i = mMin:nMax;
+    i = nMin:nMax;
     rel = zeros(1, nMax);
-    rel(i) = i-mMin+1; % the assignment to a specific slice of rel is important
+    rel(i) = i-nMin+1; % the assignment to a specific slice of rel is important
     % rel gives the position of a submatrix index in the larger matrix
     % the code can probably be reworked to eliminate it
     
@@ -112,11 +113,11 @@ for m = absmvec
             delta(1) = -sin2Theta;
             delta(2) = -3*sin2Theta*cosTheta;
             for k = 3:nMax
-                delta(k) = delta(k-1)*cosTheta - nVec(k)*sin2Theta*wig(k);
+                delta(k) = delta(k-1)*cosTheta - k*sin2Theta*wig(k);
             end
         else
-            for k = mMin:nMax
-                delta(k) = nVec(k)*cosTheta*wig(k+1) - wig(k)*sqrt((nVec(k)^2 - nVec(m)^2));
+            for k = nMin:nMax
+                delta(k) = k*cosTheta*wig(k+1) - wig(k)*sqrt((k^2 - m^2));
             end
         end
     
@@ -150,58 +151,56 @@ for m = absmvec
             if m ~= 0
                 % For plane-symmetric particles and i+j=even, matrix elements are zero
                 % i = nMin:nMax so if i(1)+j=nMin+j is even, i(1:2:end)+j will be even
-                if mod(mMin+j, 2) ~= 0
+                if mod(nMin+j, 2) ~= 0
                     ii = i(1:2:end);
                 else
                     ii = i(2:2:end);
                 end
 
-                ipj = nVec(ii) .* nVec(j) ./ radius;
+                ipj = ii .* j ./ radius;
                 i1 = wig(ii+1) .* wig(j+1) .* drSinTheta;
                 gm1 = gm(ii) .* gm(j) / sin2Theta / 2;
                 if mod(m,2) ~= 0
                     gm1 = -gm1;
                 end
                 
-                % TODO: Do the nVec calls change anything over using i,j
-                % directly?
-                za = radius + ia(ii) .* (radius .* ib(j) - nVec(j)) - nVec(ii) .* ib(j) + ipj;
+                za = radius + ia(ii) .* (radius .* ib(j) - j) - ii .* ib(j) + ipj;
                 zb = (delta(ii) .* wig(j+1) + delta(j) .* wig(ii+1)) * radius;
-                zc = i1 .* (nVecProd(ii) .* ib(j) + nVecProd(j) .* ia(ii) - ipj .* (nVec(ii) + nVec(j) + 2));
+                zc = i1 .* (nVecProd(ii) .* ib(j) + nVecProd(j) .* ia(ii) - ipj .* (ii + j + 2));
                 zr = zc + ka(ii) .* nVecProd(j) .* i1;
-                x1 = nVec(m) .* gm1 .* bessel(j+1);
+                x1 = m .* gm1 .* bessel(j+1);
 
                 % M21 calculations
                 Q(n+rel(ii),rel(j)) = Q(n+rel(ii),rel(j)) - (iz(ii) .* x1 .* (za .* zb + zc)).';
-                zax = za + ka(ii) * (radius .* ib(j) - nVec(j));
+                zax = za + ka(ii) * (radius .* ib(j) - j);
                 P(n+rel(ii),rel(j)) = P(n+rel(ii),rel(j)) - (jz(ii) .* x1 .* (zax .* zb + zr)).';
 
                 % M12 calculations
                 za = za + radius .* (s^2 - 1);
                 Q(rel(ii),n+rel(j)) = Q(rel(ii),n+rel(j)) - (iz(ii) .* x1 .* (za .* zb + zc) ./ s).';
-                zax = za + ka(ii) .* (radius * ib(j) - nVec(j));
+                zax = za + ka(ii) .* (radius * ib(j) - j);
                 P(rel(ii),n+rel(j)) = P(rel(ii),n+rel(j)) - (jz(ii) .* x1 .* (zax .* zb + zr) ./ s).';
 
                 % Additional matrices required by coat, PP and QQ
                 % Calculate using h(kr) in place of the j(kr) bessel function
-                za = radius * (1 + ia(ii) .* cb(j)) - nVec(j) .* ia(ii) - nVec(ii) .* cb(j) + ipj;
+                za = radius * (1 + ia(ii) .* cb(j)) - j .* ia(ii) - ii .* cb(j) + ipj;
                 zc = zc + (cb(j) - ib(j)) .* nVecProd(ii) .* i1;
                 zr = zc + ka(ii) .* nVecProd(j) .* i1;
-                x1 = nVec(m) .* gm1 .* hankel2(j+1);
+                x1 = m .* gm1 .* hankel2(j+1);
                 % M21
                 QQ(n+rel(ii),rel(j)) = QQ(n+rel(ii),rel(j)) - (iz(ii) .* x1 .* (za .* zb + zc)).';
-                zax = za + ka(ii) .* (radius .* cb(j) - nVec(j));
+                zax = za + ka(ii) .* (radius .* cb(j) - j);
                 PP(n+rel(ii),rel(j)) = PP(n+rel(ii),rel(j)) - (jz(ii) .* x1 .* (zax .* zb + zc)).';
                 % M12
-                za = radius .* (s^2 + ia(ii) .* cb(j)) - nVec(j) .* ia(ii) - nVec(ii) .* cb(j) + ipj;
+                za = radius .* (s^2 + ia(ii) .* cb(j)) - j .* ia(ii) - ii .* cb(j) + ipj;
                 QQ(rel(ii),n+rel(j)) = QQ(rel(ii),n+rel(j)) - (iz(ii) .* x1 .* (za .* zb + zc) ./ s).';
-                zax = za + ka(ii) .* (radius .* cb(j) - nVec(j));
+                zax = za + ka(ii) .* (radius .* cb(j) - j);
                 PP(rel(ii),n+rel(j)) = PP(rel(ii),n+rel(j)) - (jz(ii) .* x1 .* (zax .* zb + zr) ./ s).';
             end
 
             % M11, M22 calculations
             % For plane-symmetric particles and i+j=odd, matrix elements are zero
-            if mod(mMin+j, 2) == 0
+            if mod(nMin+j, 2) == 0
                 ii = i(1:2:end);
             else
                 ii = i(2:2:end);
@@ -213,10 +212,10 @@ for m = absmvec
             end
             gm2 = complex(0, gm1);
 
-            zd = radius .* (ib(j) - s^2 .* ia(ii)) + s^2 .* nVec(ii) - nVec(j);
+            zd = radius .* (ib(j) - s^2 .* ia(ii)) + s^2 .* ii - j;
             ze = delta(ii) * delta(j);
             if m ~= 0
-                ze = ze + (nVecProd(m) - nVec(m)) * wig(ii+1) * wig(j+1);
+                ze = ze + (nVecProd(m) - m) * wig(ii+1) * wig(j+1);
             end
             ze = ze .* radius;
             zfx = wig2(j) .* delta(ii);
@@ -229,7 +228,7 @@ for m = absmvec
             zdx = zd - (ja(ii) - ia(ii)) .* radius .* s^2;
             P(n+rel(ii),n+rel(j)) = P(n+rel(ii),n+rel(j)) + (jz(ii) .* x1 .* (zdx .* ze + zf) ./ s).';
             % M11
-            zd = radius .* (ib(j) - ia(ii)) + nVec(ii) - nVec(j);
+            zd = radius .* (ib(j) - ia(ii)) + ii - j;
             zf = zfx - zfy;
             Q(rel(ii),rel(j)) = Q(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf)).';
             zdx = zd - (ja(ii) - ia(ii)) * radius;
@@ -240,13 +239,13 @@ for m = absmvec
 %             end
 
             % PP and QQ again
-            zd = radius .* (cb(j) - s^2 .* ia(ii)) + s^2 .* nVec(ii) - nVec(j);
+            zd = radius .* (cb(j) - s^2 .* ia(ii)) + s^2 .* ii - j;
 			zf = zfx - s^2 .* zfy;
 			x1 = gm2 .* hankel2(j+1);
 	        QQ(n+rel(ii),n+rel(j)) = QQ(n+rel(ii),n+rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf) ./ s).';
 			zdx = zd - (ja(ii) - ia(ii)) .* radius .* s^2;
 	        PP(n+rel(ii),n+rel(j)) = PP(n+rel(ii),n+rel(j)) + (jz(ii) .* x1 .* (zdx .* ze + zf) ./ s).';
-			zd = radius .* (cb(j) - ia(ii)) + nVec(ii) - nVec(j);
+			zd = radius .* (cb(j) - ia(ii)) + ii - j;
 			zf = zfx - zfy;
 	        QQ(rel(ii),rel(j)) = QQ(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf)).';
 			zdx = zd - (ja(ii) - ia(ii)) .* radius;
