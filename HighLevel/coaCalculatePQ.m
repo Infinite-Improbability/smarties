@@ -1,4 +1,4 @@
-function [PQcells, PPQQcells] = coaCalculateTMatrix(nMax, absmvec, stGeometry, stParams, Tcells)
+function [PQcells, PPQQcells] = coaCalculatePQ(nMax, absmvec, stGeometry, stParams)
 %coaCalculateTMatrix - Description
 %
 % Syntax: T = coaCalculateTMatrix(input)
@@ -235,26 +235,6 @@ for m = absmvec
         
 
     end % end of the loop over theta
-
-    % Testing: alt combination method
-%     T = rvhGetFullMatrix(Tcells{m+1}, 'st4MT');
-%     for i=1:n
-%         for j = 1:n
-%             for k = 1:n
-%                 if mod(i+j, 2) == 0
-%                     Q(i,j) = Q(i,j) + QQ(i,k)*T(k,j) + Q(i,k+n)*T(k+n,j);
-% 		            P(i,j) = P(i,j) + PP(i,k)*T(k,j) + PP(i,k+n)*T(k+n,j);
-%                     Q(i+n,j+n) = Q(i+n,j+n) + QQ(i+n,k)*T(k,j+n) + QQ(i+n,k+n)*T(k+n,j+n);
-% 		            P(i+n,j+n) = P(i+n,j+n) + PP(i+n,k)*T(k,j+n) + PP(i+n,k+n)*T(k+n,j+n);
-%                 else
-%                     Q(i,j+n) = Q(i,j+n) + QQ(i,k)*T(k,j+n) + QQ(i,k+n)*T(k+n,j+n);
-%                     P(i,j+n) = P(i,j+n) + PP(i,k)*T(k,j+n) + PP(i,k+n)*T(k+n,j+n);
-%                     Q(i+n,j) = Q(i+n,j) + QQ(i+n,k)*T(k,j) + QQ(i+n,k+n)*T(k+n,j);
-%                     P(i+n,j) = P(i+n,j) + PP(i+n,k)*T(k,j) + PP(i+n,k+n)*T(k+n,j);
-%                 end
-%             end
-%         end
-%     end
 
     % Save it in the standard smarties format
     PQcells{1, m+1} = cellExport(P, Q, m, nMax);

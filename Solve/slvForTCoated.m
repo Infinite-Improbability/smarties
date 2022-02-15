@@ -54,7 +54,7 @@ k1 = stParamsCoat.k1;
 %% Get P2, Q2, PP2, QQ2
 NQ = N+Delta; % TODO: Add proper convergence checking
 stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c, [], 'gauss2');
-[PQ, PPQQ] = coaCalculateTMatrix(NQ, absmvec, stGeometryCoat, stParamsCoat, TRCore);
+[PQ, PPQQ] = coaCalculatePQ(NQ, absmvec, stGeometryCoat, stParamsCoat);
 
 % If needed, discard higher order multipoles
 % (which are affected by the finite size of P and Q)
@@ -71,13 +71,6 @@ PQCombined = PQ;
 % Then find the combined matrix for each m
 for m = 1:length(absmvec)
     suffixes = ["eo" "oe"];
-    
-    % Testing
-    Tm = rvhGetFullMatrix(TRCore{m}, 'st4MT');
-    Qm = rvhGetFullMatrix(PQ{m}, 'st4MQ');
-    Pm = rvhGetFullMatrix(PQ{m}, 'st4MP');
-    QQm = rvhGetFullMatrix(PPQQ{m}, 'st4MQ');
-    PPm = rvhGetFullMatrix(PPQQ{m}, 'st4MP');
 
     for sufIndex = 1:2
         suffix = char(suffixes(sufIndex));
@@ -110,16 +103,10 @@ for m = 1:length(absmvec)
         PQCombined{m}.(['st4MQ', suffix]).M21 = Q21;
         PQCombined{m}.(['st4MQ', suffix]).M22 = Q22;
     end
-
-    % Testing
-    Qcm = rvhGetFullMatrix(PQCombined{m}, 'st4MQ');
-    Pcm = rvhGetFullMatrix(PQCombined{m}, 'st4MP');
 end
 
 % Get T (and possibly R)
 CstTRa = rvhGetTRfromPQ(PQCombined,bGetR);
-
-
 
 % If required, symmetrize the T-matrix
 if bGetSymmetricT
