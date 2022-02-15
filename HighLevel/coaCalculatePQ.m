@@ -1,11 +1,37 @@
 function [PQcells, PPQQcells] = coaCalculatePQ(nMax, absmvec, stGeometry, stParams)
-%coaCalculateTMatrix - Description
+%% coaCalculatePQ- Description
+% Calculates the P and Q matrices for a coating on a spheroid. It also
+% calculates the PP and QQ matrices, which are the same except for the
+% subsitution of hankel functions of the first kind in the place of bessel
+% functions with the argument (relative refractive index * radius).
 %
-% Syntax: T = coaCalculateTMatrix(input)
+% This implementation is based on code from LISA TODO: cite properly.
 %
-% Long description
+% Input:
+%   - nMax:      [1 x 1] The maximum multipole order to return
+%   - absmvec:    [1 x M] The values of m that the calculation should be carried
+%                 out for. The order should be [0 1 2 ... mMax], omitting
+%                 those entries not required
+%   - stGeometry: Structure containing geometric information, as from
+%                 sphMakeGeometry. Should be generated with the 'gauss2'
+%                 option.
+%   - stParams:   Structure containing simulation parameters, as from
+%                 tmsMakeParams or tmsMakeParamsLambda
+%
+% Output
+%   - PQcells:   {1 x M} cell containing P and Q matrices
+%   - PPQQcells: {1 x M} cell containing PP and QQ matrices
+%   For details on the matrix format set sphCalculatePQ.
+%
+% Dependency:
+%   wigner [private], cellExport [private]
 
-% TODO: Use arguments block
+arguments
+    nMax double {mustBeInteger, mustBePositive}
+    absmvec (1,:) double {mustBeInteger, mustBeNonnegative}
+    stGeometry struct
+    stParams struct
+end
 
 s = stParams.s; % relative refractive index
 absmvec = transpose(absmvec); % transposing the vector so we can easily

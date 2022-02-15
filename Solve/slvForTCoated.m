@@ -1,7 +1,8 @@
 function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
-  %% slvForT
+%% slvForT
 % Calculates the T-matrix and orientation-averaged properties for a coated
 % particle
+%
 % Input:
 %       - stParamsCore and stParamsCoat: structs for core and coating respectively.
 %              The following parameters should be defined in stParams:
