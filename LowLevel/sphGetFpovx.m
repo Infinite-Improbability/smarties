@@ -1,4 +1,4 @@
-function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x, hankel)
+function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x)
   %% sphGetFpovx
 % Calculate F^+/x (see Eq. 46 of JQSRT 123 (2013) 153-168)
 % 
@@ -16,37 +16,19 @@ function [Fpovx, rbchi, rbpsi] = sphGetFpovx(nNmax, s, x, hankel)
 %        nNmax:  [1 x 1] The maximum value of n that is desired.
 %        s:      [1 x 1] The relative refractive index of the particle
 %        x:      [T x 1] The values of x at which the function is evaluated
-%        hankel: [logical]. Optional. If true replace psi(sx) with xi(sx)
 %
 % Output:
 %        Fpovx: [N+1 x N+1 x T] The matrix F^+/x
-%               If hankel=true this the psi_k(sx) component is replaced
-%               with a xi_k(sx) component.
 %        rbchi: [T x N+1] The Riccati-Bessel function chi_n(x)
 %        rbpsi: [T x N+1] The Riccati-Bessel functoin psi_k(sx)
-%               If hankel=true this is replaced with xi_k(sx).
 %
 % Dependency: 
 % sphGetFpRow, vshRBchi, vshRBpsi
-
-if nargin < 4
-    hankel = false;
-end
 
 numX = length(x);
 
 rbpsi=vshRBpsi(0:(nNmax), s.*x); % [T x K+1]
 rbchi=vshRBchi(0:(nNmax), x); % [T x N+1]
-
-if hankel
-    % TODO: This is an ugly solution as it sets things to have
-    % meanings other than their names suggest. Improve? Oh, it probably
-    % also causes problems with calculation of Hankel in parent functions.
-    % We replace psi(sx) with xi(sx)=psi(sx)+i*chi(sx)
-    % See JQSRT 92 (2005) 373-381
-    rbchisx =vshRBchi(0:(nNmax), s.*x); % [T x K+1]
-    rbpsi = rbpsi + 1i*rbchisx;
-end
 
 Fpovx = zeros(nNmax + 1, nNmax+1, numX); % [N+1 x K+1 x T]
 % for xind=1:numX
@@ -64,8 +46,6 @@ Fpovx(nNmax+1, 1:(nNmax-4+1), :) = bsxfun(@times,FpRow,1./x.');
 % do n, k-1 (West) recursion [Solving for F^+_{n,k-1} in Eq. 51 (dividing
 % all terms by x]
 % We only do n+k even
-% The recursion in Eq. 51 holds true for chi_n(x) * xi_k(sx) as well as for
-% chi_n(x) * psi_k(sx).
 for kk=nNmax:-1:0
     kInd=kk+1; % kk is the k-value, kInd is the index
     % First fill in the matrix where there are no cancellations (n=0..k+2)

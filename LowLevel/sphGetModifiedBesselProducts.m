@@ -1,4 +1,4 @@
-function [stXipsiAll, stPsipsiAll] = sphGetModifiedBesselProducts(nNmax, s, x, NB, coated)
+function [stXipsiAll, stPsipsiAll] = sphGetModifiedBesselProducts(nNmax, s, x, NB)
   %% sphGetModifiedBesselProducts
 % Returns matrices of modified Bessel products
 % 
@@ -18,7 +18,6 @@ function [stXipsiAll, stPsipsiAll] = sphGetModifiedBesselProducts(nNmax, s, x, N
 %       NB:    [1 x 1] The number of N that should be used when
 %                calculating the Bessel function products.
 %                For large x, it may be necessary to use NB>N
-%       coated: logical
 %
 %       stXiPsiAll: Structure containing the matrices for the product
 %                   xipsi, as used in Q. The fields are (all [N x N x T])
@@ -43,7 +42,7 @@ function [stXipsiAll, stPsipsiAll] = sphGetModifiedBesselProducts(nNmax, s, x, N
 % sphGetBesselProductsPrimes [private], sphGetXiPsi
 
     % Start with F^+/x i.e. xipsi and psipsi
-    stBessel= sphGetXiPsi(nNmax, s, x, NB, coated);
+    stBessel= sphGetXiPsi(nNmax, s, x, NB);
 
     % Then deduce from them the equivalent with derivatives
     stXipsiAll = sphGetBesselProductsPrimes(stBessel.xipsi);

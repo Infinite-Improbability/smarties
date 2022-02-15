@@ -1,4 +1,4 @@
-function stBessel = sphGetXiPsi(nNmax, s, x, NB, coated)
+function stBessel = sphGetXiPsi(nNmax, s, x, NB)
   %% sphGetXiPsi
 % Calculates modified Bessel function products for spheroids
 % 
@@ -22,7 +22,6 @@ function stBessel = sphGetXiPsi(nNmax, s, x, NB, coated)
 %         NB: [1 x 1] The number of n that are used to
 %                  calculate the Bessel products (NB>N is needed for large x
 %                  to ensure accuracy)
-%         coated: logical
 %
 % Output:
 %         stBessel: A structure containing various Bessel functions and
@@ -38,11 +37,9 @@ function stBessel = sphGetXiPsi(nNmax, s, x, NB, coated)
 
 % This call takes care of the chipsi products (which are the ones causing
 % problems for spheroids)
-[chipsi,chin,psik] = sphGetFpovx(NB+1, s, x, coated);
+[chipsi,chin,psik] = sphGetFpovx(NB+1, s, x);
 % chipsi is [NB+2 x NB+2 x X]
 % chin, psik are [X x NB+2]
-% pski = psi_k(sx) is transfomed into a 1st order hankel function h(sx)
-% when coated is true 
 
 % The rest calculates the normal psipsi products using standard Matlab
 % functions to compute the Bessel functions (only up to N+2)
