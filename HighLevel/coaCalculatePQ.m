@@ -9,7 +9,7 @@ function [PQcells, PPQQcells] = coaCalculatePQ(nMax, absmvec, stGeometry, stPara
 %
 % Input:
 %   - nMax:      [1 x 1] The maximum multipole order to return
-%   - absmvec:    [1 x M] The values of m that the calculation should be carried
+%   - absmvec:    [M x 1] The values of m that the calculation should be carried
 %                 out for. The order should be [0 1 2 ... mMax], omitting
 %                 those entries not required
 %   - stGeometry: Structure containing geometric information, as from
@@ -28,7 +28,7 @@ function [PQcells, PPQQcells] = coaCalculatePQ(nMax, absmvec, stGeometry, stPara
 
 arguments
     nMax double {mustBeInteger, mustBePositive}
-    absmvec (1,:) double {mustBeInteger, mustBeNonnegative}
+    absmvec (:,1) double {mustBeInteger, mustBeNonnegative}
     stGeometry struct
     stParams struct
 end
