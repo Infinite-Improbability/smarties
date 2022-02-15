@@ -61,14 +61,14 @@ end
 M = length(absmvec); % number of m values
 
 bOutput=true; % default
-if isfield(stParams,'bOutput');
+if isfield(stParams,'bOutput')
     bOutput = stParams.bOutput;
 end
 
 if bOutput
     disp(['sphCalculatePQ: Calculating P,Q for ', int2str(M), ' m-values with N_Q = ', ...
         int2str(nNmax), ', N_B = ', int2str(NB), ', N_Theta = ', ...
-        int2str(stRtfunc.nNbTheta)]);
+        int2str(stRtfunc.nNbTheta), ', coated (logical) = ', int2str(coated)]);
 end
 
 CstPQa = cell(1,M); % initializes cell to be returned

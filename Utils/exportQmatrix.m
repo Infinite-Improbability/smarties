@@ -25,9 +25,6 @@ function [Q] = exportQmatrix(stQ, complete, invert, filename, format)
 % Dependency:
 % combine_oeeo
 
-%% Parse input parameters
-% TODO: Decide between positional or keyword args
-
 arguments
     stQ cell
     complete logical = false % For T matrix this defaults to true
@@ -180,21 +177,21 @@ if(~isempty(filename))
         fileID = fopen(filename, 'w');
     end
     
-    if inverse
+    if invert
         fprintf(fileID, '%d elements of Q^(-1)-matrix\n', size(Q, 1));
     else
         fprintf(fileID, '%d elements of Q-matrix\n', size(Q, 1));
     end
-    fprintf(fileID, '* s  1st block index (electric/magnetic)');
-    fprintf(fileID, '* sp 2nd block index (electric/magnetic)');
-    fprintf(fileID, '* n  1st n-index');
-    fprintf(fileID, '* np 2nd n-index');
-    fprintf(fileID, '* m  1st m-index');
-    fprintf(fileID, '* mp 2nd m-index');
-    fprintf(fileID, '* Qr real (Q_s,sp,m,mp,n,np)');
-    fprintf(fileID, '* Qi imag (Q_ssp,m,mp,n,np)');
-    fprintf(fileID, format, Q.');
+    fprintf(fileID, '* s  1st block index (electric/magnetic)\n');
+    fprintf(fileID, '* sp 2nd block index (electric/magnetic)\n');
+    fprintf(fileID, '* n  1st n-index\n');
+    fprintf(fileID, '* np 2nd n-index\n');
+    fprintf(fileID, '* m  1st m-index\n');
+    fprintf(fileID, '* mp 2nd m-index\n');
+    fprintf(fileID, '* Qr real (Q_s,sp,m,mp,n,np)\n');
+    fprintf(fileID, '* Qi imag (Q_ssp,m,mp,n,np)\n');
     fprintf(fileID, 's sp n np m mp Qr Qi \n');
+    fprintf(fileID, format, Q.');
 
     if ~strcmp(filename, 'stdout')
         fclose(fileID);

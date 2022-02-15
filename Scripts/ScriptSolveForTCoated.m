@@ -42,14 +42,13 @@ a = c / h;
 
 % We define  aspect ratio, wavenumber, and size parameter for a
 % prolate spheroid core
-q = 0.5;
+q = 0.5; % Ratio of inner / outer
 hIn = h; % aspect ratio, h=c/a for prolate spheroids
 sIn = (1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
 cIn = c * q;
 aIn = cIn / hIn;
 xmaxIn = kIn * max(aIn, cIn); % maximum size parameter xmaxIn= kIn * max(aIn,cIn)
-% TODO: Check real cast
 
 %% Collect simulation parameters in a structure
 stParamsCoat.a=a; stParamsCoat.c=c;
@@ -59,7 +58,7 @@ stParamsCore.k1=kIn; stParamsCore.s=sIn;
 % Optional parameters may also be defined as follows:
 stOptions.bGetR = false;
 stOptions.Delta = 0;
-stOptions.NB = 0; % NB will be estimated automatically
+stOptions.NB = 0; % NB will be estimated automatically (not implemented)
 stOptions.bGetSymmetricT = false;
 stOptions.bOutput = true;
 
@@ -98,13 +97,10 @@ stParams2Core.N=stParams2Core.N+5;
 stParams2Coat.nNbTheta=stParams2Coat.nNbTheta+5;
 stParams2Core.nNbTheta=stParams2Core.nNbTheta+5;
 [stCoa2, CstTRa2] = slvForTCoated(stParams2Core, stParams2Coat, stOptions);
-fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N, toc);
+fprintf('\nT-matrix (N = %d) ... done in %.2f seconds.\n', N+5, toc);
 
 %% Reshape the T-matrix to long format, and export to text file
-T = exportTmatrix(CstTRa, 'Tmatrix.txt');
-% TODO: This doesn't actually export to text file because of bad argument
-% handling - the string is sent to the 'complete' parameter, not the 'out'
-% parameter
+T = exportTmatrix(CstTRa, true, 'Tmatrix.txt');
 
 %% Display orientation-averaged results
 fprintf('Results for a=%g, c=%g, k1=%g, s=%g+%gi, N=%d, Nt=%d\n',...
