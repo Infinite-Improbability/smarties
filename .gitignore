@@ -34,3 +34,4 @@ octave-workspace
 Tmatrix.txt
 Qmatrix.txt
 tmp_stGeometry.mat
+tmp_*

@@ -219,12 +219,12 @@ for m = absmvec
 			x1 = gm2 .* hankel2(j+1);
 	        QQ(n+rel(ii),n+rel(j)) = QQ(n+rel(ii),n+rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf) ./ s).';
 			zdx = zd - (ja(ii) - ia(ii)) .* radius .* s^2;
-	        PP(n+rel(ii),n+rel(j)) = PP(n+rel(ii),n+rel(j)) + (jz(ii) .* x1 .* (zdx .* ze+zf) ./ s).';
+	        PP(n+rel(ii),n+rel(j)) = PP(n+rel(ii),n+rel(j)) + (jz(ii) .* x1 .* (zdx .* ze + zf) ./ s).';
 			zd = radius .* (cb(j) - ia(ii)) + nVec(ii) - nVec(j);
 			zf = zfx - zfy;
-	        QQ(rel(ii),rel(j)) = QQ(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd.*ze+zf)).';
+	        QQ(rel(ii),rel(j)) = QQ(rel(ii),rel(j)) + (iz(ii) .* x1 .* (zd .* ze + zf)).';
 			zdx = zd - (ja(ii) - ia(ii)) .* radius;
-	        PP(rel(ii),rel(j)) = PP(rel(ii),rel(j)) + (jz(ii) .* x1 .* (zdx.*ze+zf)).';
+	        PP(rel(ii),rel(j)) = PP(rel(ii),rel(j)) + (jz(ii) .* x1 .* (zdx .* ze + zf)).';
             
             % testing
             if m == 0

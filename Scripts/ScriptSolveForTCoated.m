@@ -33,7 +33,7 @@ close all
 % <<../fig/schematicp.png>>
 %
 h = 2; % aspect ratio, h=c/a for prolate spheroids
-s = 1; % relative refractive index
+s = 1.05; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
 xmax = 15.874010519681994; % maximum size parameter xmax= k1 * max(a,c)
 % ... from which we deduce
@@ -44,7 +44,7 @@ a = c / h;
 % prolate spheroid core
 q = 0.5; % Ratio of inner / outer
 hIn = h; % aspect ratio, h=c/a for prolate spheroids
-sIn = 1.5 / s; %(1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
+sIn = (1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
 cIn = c * q;
 aIn = cIn / hIn;

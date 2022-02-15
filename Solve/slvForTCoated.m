@@ -51,7 +51,17 @@ k1 = stParamsCoat.k1;
 stParamsCore.a = stParamsCore.a * stParamsCoat.s;
 stParamsCore.c = stParamsCore.c * stParamsCoat.s;
 % load("tmp_stGeometry.mat", "stGeometryCore"); % for testing
-[~, TRCore] = slvForT(stParamsCore, stOptions);
+% [~, TRCore] = slvForT(stParamsCore, stOptions);
+
+% Testing
+% stGeometryCore.a = stGeometryCore.a * 1.05;
+% stGeometryCore.c = stGeometryCore.c * 1.05;
+% stGeometryCore.r0 = stGeometryCore.r0 * 1.05;
+% stGeometryCore.r = stGeometryCore.r * 1.05;
+% stGeometryCore.drdt = stGeometryCore.drdt * 1.05;
+stGeometryCore = sphMakeGeometry(stParamsCore.nNbTheta, stParamsCore.a, stParamsCore.c, [], 'gauss2');
+[corePQ, ~] = coaCalculateTMatrix(N+Delta, absmvec, stGeometryCore, stParamsCore);
+TRCore = rvhGetTRfromPQ(corePQ, bGetR);
 
 %% Get P2, Q2, PP2, QQ2
 NQ = N+Delta; % TODO: Add proper convergence checking
