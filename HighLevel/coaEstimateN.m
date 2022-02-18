@@ -1,8 +1,8 @@
-function [Nreturn, err] = sphEstimateN(stParams, stOptions, maxAcc)
+function [Nreturn, err] = sphEstimateN(stParamsCore, stParamsCoat, stOptions, maxAcc)
 %% sphEstimateN
 % Estimates the required number of multipoles N for convergence of physical properties
 %
-% sphEstimateN(stParams, stOptions, maxAcc)
+% coaEstimateN(stParams, stOptions, maxAcc)
 % finds an estimate for N by studying the convergence of the
 % the orientation-averaged extinction cross-section calculated for m=0 and
 % m=1 only to speed up test.
@@ -19,9 +19,7 @@ function [Nreturn, err] = sphEstimateN(stParams, stOptions, maxAcc)
 %               be reached, the best possible accuracy is returned.
 %
 % Dependency:
-% rvhGetAverageCrossSections, rvhGetSymmetricMat, rvhGetTRfromPQ,
-% rvhTruncateMatrices, slvGetOptionsFromStruct, sphCalculatePQ,
-% sphEstimateNB, sphMakeGeometry
+% sphEstimateN, sphMakeGeometry, slvForTCoated
 
 
 %set default parameters
@@ -32,28 +30,24 @@ minAcc = 1e-3;
 maxAcc = min(maxAcc,minAcc);
 
 absmvec = [0,1]; % only m=0 and 1
-stOptions.absmvec = absmvec;
-% If stOptions lacks the absmvec field then it tries generating one using stParams.N
-% Which probably doesn't exist.
-% Errors ensures.
-
-[~,~,~,~,bGetSymmetricT, bOutput] = slvGetOptionsFromStruct(stParams,stOptions);
-
-stk1s.bOutput=bOutput;
 
 % This works on only one wavelength, so we choose the largest k1 * s
 % as representative of the worst case
 % Find max and min relative refractive index
-[~,ind] = max(abs(stParams.k1 .* stParams.s));
+[~,ind] = max(abs(stParamsCoat.k1 .* stParamsCoat.s));
+stParamsCoat.s = stParamsCoat.s(ind); stParamsCore.s = stParamsCore.s(ind); 
+stParamsCoat.k1 = stParamsCoat.k1(ind); stParamsCore.k1 = stParamsCore.k1(ind);
 
-stk1s.s =stParams.s(ind);
-stk1s.k1 =stParams.k1(ind);
+stGeometry = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c, [], 'gauss2');
 
-stGeometry = sphMakeGeometry(stParams.nNbTheta, stParams.a, stParams.c);
+% Calculate parameters for core
+% We can do this easily by using the existing functions for homogenous spheroids
+[coreN, coreErr] = sphEstimateN(stParamsCore, stOptions, maxAcc);
+stParamsCore.N = coreN;
+Nmin = coreN;
 
-Nmin=5;
-if isfield(stParams,'N') % if defined, only look for larger values
-    Nmin=max(Nmin,stParams.N);
+if isfield(stParamsCoat,'N') % if defined, only look for larger values
+    Nmin=max(Nmin,stParamsCoat.N);
 end
 
 NQarr=[21,51,101,151,201]; % Arrays of NQs that will be used for tests
@@ -68,11 +62,7 @@ Afit = [ones(NforConv,1), (1:NforConv).'];
 warning('off', 'SMARTIES:missingm'); % suppress warnings in rvhGetAverageCrossSections
 for nq=1:nqmax % loop on NQ
     NQ=NQarr(nq);
-    % Estimating NB
-    NB=sphEstimateNB(NQ, stGeometry, stk1s);
 
-    % Calculates P,Q
-    CstPQa = sphCalculatePQ(NQ, absmvec, stGeometry, stk1s, NB);
     % Store errors
     Ntest=Nmin:2:NQ; % Test by steps of 2
     nnmax=length(Ntest);
@@ -82,13 +72,12 @@ for nq=1:nqmax % loop on NQ
     for nn = 1:nnmax % Loop over truncation
         % Truncate P,Q to N and get corresponding T
         N=Ntest(nn);
-        CstTRa = rvhGetTRfromPQ(rvhTruncateMatrices(CstPQa, N),false);
 
-        % If required, symmetrize the T-matrix
-        if bGetSymmetricT
-            CstTRa = rvhGetSymmetricMat(CstTRa, {'st4MT'});
-        end
-        stCoa = rvhGetAverageCrossSections(stk1s.k1, CstTRa);
+        % Update supplied options with tested params
+        stOptions.absmvec = absmvec;
+        stParamsCoat.N = N;
+
+        [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions);
         Qnew=stCoa.Cext;
 
         % Relative error

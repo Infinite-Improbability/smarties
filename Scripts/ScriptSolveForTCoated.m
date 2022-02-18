@@ -58,7 +58,7 @@ stParamsCore.k1=kIn; stParamsCore.s=sIn;
 % Optional parameters may also be defined as follows:
 stOptions.bGetR = false;
 stOptions.Delta = 0;
-stOptions.NB = 0; % NB will be estimated automatically (not implemented)
+stOptions.NB = 0; % NB will be estimated automatically (only used for core)
 stOptions.bGetSymmetricT = false;
 stOptions.bOutput = true;
 
@@ -69,14 +69,19 @@ stOptions.bOutput = true;
 % Those can be estimated automatically for some desired accuracy as follows
 % [N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8);
 
+
 % In many instances, it will be more efficient to set those manually, e.g.
- N = 30;
- nNbTheta = 120;
+% N = 30;
+% nNbTheta = 120;
 
 % Add those to the parameters structure
-stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
-stParamsCore.N=N; stParamsCore.nNbTheta=nNbTheta;
+% stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
+% stParamsCore.N=N; stParamsCore.nNbTheta=nNbTheta;
 
+nNbTheta = 120;
+stParamsCoat.nNbTheta=nNbTheta; stParamsCore.nNbTheta=nNbTheta;
+N = coaEstimateN(stParamsCore, stParamsCoat, stOptions, 1e-8);
+stParamsCoat.N=N; stParamsCore.N=N;
 
 %% Solving for the T-matrix
 tic;

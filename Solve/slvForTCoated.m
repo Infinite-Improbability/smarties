@@ -43,7 +43,6 @@ end
 % Expand some options we'll need later
 [bGetR,Delta,~,absmvec,bGetSymmetricT, ~] = slvGetOptionsFromStruct(stParamsCoat,stOptions);
 N = min(stParamsCoat.N, stParamsCore.N);
-k1 = stParamsCoat.k1;
 
 %% Get T1 (T-matrix for core in medium matching coating)
 % We want to multiply the equivalent-volume-sphere radius by the refractive
@@ -61,6 +60,7 @@ stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParams
 % (which are affected by the finite size of P and Q)
 % N+Delta>=N: Maximum multipole order for computing P and Q matrices
 if (N+Delta)>N
+    TRCore = rvhTruncateMatrices(TRCore, N);
     PQ = rvhTruncateMatrices(PQ, N);
     PPQQ = rvhTruncateMatrices(PPQQ, N);
 end
@@ -82,7 +82,7 @@ for m = 1:length(absmvec)
         QQ = PPQQ{m}.(['st4MQ', suffix]);
         
         % TODO: Running slvForT is a waste of time in this case - skip
-        % Should also run if core size is zero
+        % Should also skip if core size is zero
         if stParamsCore.s == 1
             T.M11(:,:) = 0;
             T.M12(:,:) = 0;
@@ -107,7 +107,7 @@ for m = 1:length(absmvec)
 end
 
 % Get T (and possibly R)
-CstTRa = rvhGetTRfromPQ(PQCombined,bGetR);
+CstTRa = rvhGetTRfromPQ(PQCombined, bGetR);
 
 % If required, symmetrize the T-matrix
 if bGetSymmetricT
@@ -115,7 +115,7 @@ if bGetSymmetricT
 end
 
 % Calculate the (Ext, Abs, Sca) cross-sections for orientation-averaged excitation
-stCoa = rvhGetAverageCrossSections(k1, CstTRa);
+stCoa = rvhGetAverageCrossSections(stParamsCoat.k1, CstTRa);
 
 
 end
