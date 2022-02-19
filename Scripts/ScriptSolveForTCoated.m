@@ -67,21 +67,22 @@ stOptions.bOutput = true;
 % nNbTheta: Number of points for Gaussian quadratures to compute integrals in P and Q matrices
 
 % Those can be estimated automatically for some desired accuracy as follows
-% [N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8);
-
+[N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8, stParamsCore);
 
 % In many instances, it will be more efficient to set those manually, e.g.
 % N = 30;
 % nNbTheta = 120;
 
 % Add those to the parameters structure
-% stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
-% stParamsCore.N=N; stParamsCore.nNbTheta=nNbTheta;
+stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
+stParamsCore.N=N; stParamsCore.nNbTheta=nNbTheta;
 
-nNbTheta = 120;
-stParamsCoat.nNbTheta=nNbTheta; stParamsCore.nNbTheta=nNbTheta;
-N = coaEstimateN(stParamsCore, stParamsCoat, stOptions, 1e-8);
-stParamsCoat.N=N; stParamsCore.N=N;
+% Or if, for some reason, you wanted to estimate just N or nNbTheta:
+% stParamsCoat.N = 5;
+% [nNbTheta, ~] = sphEstimateNbTheta(stParamsCoat,stOptions,1e-8);
+% stParamsCoat.nNbTheta=nNbTheta; stParamsCore.nNbTheta=nNbTheta;
+% N = coaEstimateN(stParamsCore, stParamsCoat, stOptions, 1e-8);
+% stParamsCoat.N=N; stParamsCore.N=N;
 
 %% Solving for the T-matrix
 tic;

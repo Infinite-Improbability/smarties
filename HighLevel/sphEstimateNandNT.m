@@ -1,4 +1,4 @@
-function [N, nNbTheta, err] = sphEstimateNandNT(stParams, stOptions, maxAcc)
+function [N, nNbTheta, err] = sphEstimateNandNT(stParams, stOptions, maxAcc, stParamsCore)
 %% sphEstimateNandNT
 % Estimates the required number of multipoles N and quadrature points nNbTheta
 %
@@ -7,21 +7,28 @@ function [N, nNbTheta, err] = sphEstimateNandNT(stParams, stOptions, maxAcc)
 % of these two parameters.
 %
 % Input:
-%       - stParams:   Structure containing simulation parameters.
+%       - stParams: Structure containing simulation parameters.
 %                   If stParams.N is defined, then the
 %                   convergence test only checks for values larger than
-%                   this.
+%                   this. If working with a coated spheroid this should be
+%                   the parameters for the coat.
 %       - stOptions: struct with optional parameters, see
 %              slvGetOptionsFromStruct for details.
-%       - maxAcc: desired relative accuracy (default 0). If this cannot
-%               be reached, the best possible accuracy is returned.
+%       - maxAcc: (optional) desired relative accuracy (default 1e-20). If
+%               this cannot be reached, the best possible accuracy is
+%               returned.
+%       - stParamsCore: (otpional) struct with parameter for core, same
+%       format as stParams.
 %
 % Dependency:
-% sphEstimateN, sphEstimateNbTheta
+% sphEstimateN, sphEstimateNbTheta, coaEstimateN
 
 %set default parameters
+coated = false;
 if nargin < 3
     maxAcc = 1e-20;
+elseif nargin == 4
+    coated = true;
 end
 
 warning('off');
@@ -40,7 +47,12 @@ else
     % Then estimate the number of required N for this nNbTheta
     stParams.N=1;
     stParams.nNbTheta=nNbTheta+50; % We add 50 here to avoid problems with small values (occurring when h close to 1)
-    [N,errN]=sphEstimateN(stParams,stOptions,maxAcc);
+    if coated
+        stParamsCore.nNbTheta = nNbTheta + 50;
+        [N, errN] = coaEstimateN(stParamsCore, stParams, stOptions, maxAcc);
+    else
+        [N,errN] = sphEstimateN(stParams,stOptions,maxAcc);
+    end
     if ~isnan(N)
         err=max(errN,errTh);
         % Finally see whether we need more theta's for this N
