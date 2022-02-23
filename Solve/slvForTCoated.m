@@ -33,8 +33,6 @@ function [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions)
 % rvhGetTRfromPQ, rvhTruncateMatrices, rvhGetSymmetricMat,
 % rvhGetAverageCrossSections
 
-% TODO: Adjust N estimation for coated spheroids
-
 % Sanity check
 if stParamsCore.k1 ~= stParamsCoat.k1 * stParamsCoat.s
     warning("slvForTCoated: stParamsCore.k does not equal stParamsCoat.k * stParamsCoat.s")
@@ -42,28 +40,26 @@ end
 
 % Expand some options we'll need later
 [bGetR,Delta,~,absmvec,bGetSymmetricT, ~] = slvGetOptionsFromStruct(stParamsCoat,stOptions);
-N = min(stParamsCoat.N, stParamsCore.N);
+N = min(stParamsCoat.N, stParamsCore.N); % TODO: N needs to match for both. coaCalculatePQ can just pull N from params.
 
 %% Get T1 (T-matrix for core in medium matching coating)
-% We want to multiply the equivalent-volume-sphere radius by the refractive
-% index of the coating. This can be achieved by multiplying a and c of the
-% core by the same refractive index.
-[~, TRCore] = slvForT(stParamsCore, stOptions);
+if stParamsCoat.s == 1
+    [stCoa, CstTRa] = slvForT(stParamsCore, stOptions);
+    warning("slvForTCoated: Coating matches medium. Processing core only.");
+    return
+elseif stParamsCore.s == 1 || max(stParamsCore.a, stParamsCore.c) == 0
+    [stCoa, CstTRa] = slvForT(stParamsCoat, stOptions);
+    warning("slvForTCoated: Core matches coat or is of zero size. Processing coat only.");
+    return
+else
+    [~, TRCore] = slvForT(stParamsCore, stOptions);
+end
 
 
 %% Get P2, Q2, PP2, QQ2
 NQ = N+Delta; % TODO: Add proper convergence checking
 stGeometryCoat = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c, [], 'gauss2');
 [PQ, PPQQ] = coaCalculatePQ(NQ, absmvec, stGeometryCoat, stParamsCoat);
-
-% If needed, discard higher order multipoles
-% (which are affected by the finite size of P and Q)
-% N+Delta>=N: Maximum multipole order for computing P and Q matrices
-if (N+Delta)>N
-    TRCore = rvhTruncateMatrices(TRCore, N);
-    PQ = rvhTruncateMatrices(PQ, N);
-    PPQQ = rvhTruncateMatrices(PPQQ, N);
-end
 
 %% Combine to get T-matrix for coated particle
 % We'll get a variable with the right structure we can overwrite.
@@ -75,20 +71,12 @@ for m = 1:length(absmvec)
 
     for sufIndex = 1:2
         suffix = char(suffixes(sufIndex));
+
         T = TRCore{m}.(['st4MT', suffix]);
         P = PQ{m}.(['st4MP', suffix]);
         Q = PQ{m}.(['st4MQ', suffix]);
         PP = PPQQ{m}.(['st4MP', suffix]);
         QQ = PPQQ{m}.(['st4MQ', suffix]);
-        
-        % TODO: Running slvForT is a waste of time in this case - skip
-        % Should also skip if core size is zero
-        if stParamsCore.s == 1
-            T.M11(:,:) = 0;
-            T.M12(:,:) = 0;
-            T.M21(:,:) = 0;
-            T.M22(:,:) = 0;
-        end
         
         [P11, P12, P21, P22] = combineMatrixStructures(P, PP, T);
         

@@ -33,11 +33,11 @@ close all
 % <<../fig/schematicp.png>>
 %
 h = 2; % aspect ratio, h=c/a for prolate spheroids
-s = 1.05; % relative refractive index
+s = 1.25; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
-xmax = 15.874010519681994; % maximum size parameter xmax= k1 * max(a,c)
+equivVolume = 15; % equivalent volume parameter = (ca^2)^(1/3)
 % ... from which we deduce
-c = xmax / k1;
+c = h^(2/3) * equivVolume;
 a = c / h;
 
 % We define  aspect ratio, wavenumber, and size parameter for a
@@ -48,7 +48,6 @@ sIn = (1.2 + 0.01i) / s; % relative refractive index (relative to s, coating)
 kIn = k1 * s; % incident wavenumber kIn = k1 * s
 cIn = c * q;
 aIn = cIn / hIn;
-xmaxIn = kIn * max(aIn, cIn); % maximum size parameter xmaxIn= kIn * max(aIn,cIn)
 
 %% Collect simulation parameters in a structure
 stParamsCoat.a=a; stParamsCoat.c=c;
@@ -67,11 +66,11 @@ stOptions.bOutput = true;
 % nNbTheta: Number of points for Gaussian quadratures to compute integrals in P and Q matrices
 
 % Those can be estimated automatically for some desired accuracy as follows
-[N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8, stParamsCore);
+% [N, nNbTheta] = sphEstimateNandNT(stParamsCoat, stOptions, 1e-8, stParamsCore);
 
 % In many instances, it will be more efficient to set those manually, e.g.
-% N = 30;
-% nNbTheta = 120;
+N = 22;
+nNbTheta = 4 * N;
 
 % Add those to the parameters structure
 stParamsCoat.N=N; stParamsCoat.nNbTheta=nNbTheta;
@@ -80,6 +79,7 @@ stParamsCore.N=N; stParamsCore.nNbTheta=nNbTheta;
 % Or if, for some reason, you wanted to estimate just N or nNbTheta:
 % stParamsCoat.N = 5;
 % [nNbTheta, ~] = sphEstimateNbTheta(stParamsCoat,stOptions,1e-8);
+% nNbTheta = 30;
 % stParamsCoat.nNbTheta=nNbTheta; stParamsCore.nNbTheta=nNbTheta;
 % N = coaEstimateN(stParamsCore, stParamsCoat, stOptions, 1e-8);
 % stParamsCoat.N=N; stParamsCore.N=N;

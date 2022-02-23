@@ -33,12 +33,12 @@ close all
 % <<../fig/schematicp.png>>
 %
 h = 2; % aspect ratio, h=c/a for prolate spheroids
-s = 1.05; % relative refractive index
+s = 1.2 + 0.01i; % relative refractive index
 k1 = 1; % incident wavenumber k1=2pi/lambda * nM
-xmax = 15.874010519681994; % maximum size parameter xmax= k1 * max(a,c)
+% equivVolume = 10; % equivalent volume parameter = (ca^2)^(1/3)
 % ... from which we deduce
-c = xmax / k1;
-a = c / h;
+c = 50; %h^(2/3) * equivVolume;
+a = 20; %c / h;
 
 %% Collect simulation parameters in a structure
 stParams.a=a; stParams.c=c;
@@ -55,11 +55,11 @@ stOptions.bOutput = true;
 % nNbTheta: Number of points for Gaussian quadratures to compute integrals in P and Q matrices
 
 % Those can be estimated automatically for some desired accuracy as follows
-% [N, nNbTheta] = sphEstimateNandNT(stParams, stOptions, 1e-8);
+[N, nNbTheta] = sphEstimateNandNT(stParams, stOptions, 1e-8);
 
 % In many instances, it will be more efficient to set those manually, e.g.
- N = 30;
- nNbTheta = 120;
+% N = 30;
+% nNbTheta = 120;
 
 % Add those to the parameters structure
 stParams.N=N; stParams.nNbTheta=nNbTheta;

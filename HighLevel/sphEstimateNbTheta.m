@@ -31,7 +31,6 @@ end
 minAcc = 1e-3;
 maxAcc = min(maxAcc,minAcc);
 
-
 absmvec = [0,1]; % only m=0 and 1 to be faster
 
 % This works on only one wavelength, so we choose the largest k1 * s
@@ -45,6 +44,12 @@ stParam1.s =stParams.s(ind);
 stParam1.k1 =stParams.k1(ind);
 stOptions.absmvec=absmvec;
 stParam1.N=stParams.N;
+
+if stParam1.s == 1
+    warning('on');
+    warning("sphEstimateNbTheta: Refractive index is 1, estimation likely to fail.");
+    warning('off');
+end
 
 thetatable=[5:9, 10:5:50, 60:10:140, 160:20:300,350:50:700,800:100:2000];
 if isfield(stParams,'nNbTheta') % if defined, only look for larger values

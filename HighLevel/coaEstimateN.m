@@ -1,4 +1,4 @@
-function [Nreturn, err] = sphEstimateN(stParamsCore, stParamsCoat, stOptions, maxAcc)
+function [Nreturn, err] = coaEstimateN(stParamsCore, stParamsCoat, stOptions, maxAcc)
 %% sphEstimateN
 % Estimates the required number of multipoles N for convergence of physical properties
 %
@@ -38,8 +38,6 @@ absmvec = [0,1]; % only m=0 and 1
 stParamsCoat.s = stParamsCoat.s(ind); stParamsCore.s = stParamsCore.s(ind); 
 stParamsCoat.k1 = stParamsCoat.k1(ind); stParamsCore.k1 = stParamsCore.k1(ind);
 
-stGeometry = sphMakeGeometry(stParamsCoat.nNbTheta, stParamsCoat.a, stParamsCoat.c, [], 'gauss2');
-
 % Calculate parameters for core
 % We can do this easily by using the existing functions for homogenous spheroids
 [coreN, coreErr] = sphEstimateN(stParamsCore, stOptions, maxAcc);
@@ -77,7 +75,7 @@ for nq=1:nqmax % loop on NQ
         stOptions.absmvec = absmvec;
         stParamsCoat.N = N;
 
-        [stCoa, CstTRa] = slvForTCoated(stParamsCore, stParamsCoat, stOptions);
+        [stCoa, ~] = slvForTCoated(stParamsCore, stParamsCoat, stOptions);
         Qnew=stCoa.Cext;
 
         % Relative error
